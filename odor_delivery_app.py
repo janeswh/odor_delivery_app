@@ -32,14 +32,15 @@ def initialize_states():
         st.session_state.file_name = False
 
 
-def clear_fields():
+def clear_settings_fields():
     """
     Resets input fields to default values
     """
     st.session_state["text"] = ""
     st.session_state["default_roi"] = 1
     st.session_state["default_num_odors"] = 8
-    st.session_state["default_num_trials"] = 3
+    st.session_state["default_num_trials"] = 1
+    st.session_state["default_odor_duration"] = 1
     st.session_state["default_min_odor_time"] = 1
     st.session_state["default_max_odor_time"] = 1
     st.session_state["default_time_btw_odors"] = 10
@@ -57,67 +58,70 @@ def main():
     set_webapp_params()
     initialize_states()
 
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["Input Parameters", "DIY", "Random Trials", "Single Trial"]
-    )
+    st.header("Session Info")
 
-    with tab1:  # Constructs data acquisition parameters tab
-        st.header("Enter Session Info")
+    tab1_sessioninfo_col1, tab1_sessioninfo_col2 = st.columns(2)
+    with tab1_sessioninfo_col1:
+        mouse_id = st.text_input(
+            label="Mouse ID", placeholder="123456-1-2", key="text"
+        )
+    with tab1_sessioninfo_col2:
+        roi = st.number_input(label="ROI #", min_value=1, key="default_roi")
 
-        tab1_sessioninfo_col1, tab1_sessioninfo_col2 = st.columns(2)
-        with tab1_sessioninfo_col1:
-            mouse_id = st.text_input(
-                label="Mouse ID", placeholder="123456-1-2", key="text"
-            )
-        with tab1_sessioninfo_col2:
-            roi = st.number_input(
-                label="ROI #", min_value=1, key="default_roi"
-            )
+    st.header("Experiment Settings")
 
-        st.header("Set Parameters")
+    (
+        settings_col1,
+        settings_col2,
+        settings_col3,
+        settings_col4,
+    ) = st.columns(4)
+    with settings_col1:
+        num_odors = st.selectbox(
+            label="Number of Odors",
+            options=range(1, 9),
+            index=6,
+            key="default_num_odors",
+        )
 
-        tab1_top_col1, tab1_top_col2 = st.columns(2)
-        with tab1_top_col1:
-            num_odors = st.selectbox(
-                label="Number of Odors",
-                options=range(1, 9),
-                index=6,
-                key="default_num_odors",
-            )
+    with settings_col2:
+        num_trials = st.number_input(
+            label="Number of Trials per Odor",
+            min_value=1,
+            # value=24,
+            key="default_num_trials",
+        )
 
-        with tab1_top_col2:
-            num_trials = st.number_input(
-                label="Number of Trials per Odor",
-                min_value=1,
-                # value=24,
-                key="default_num_trials",
-            )
+    with settings_col3:
+        odor_duration = st.number_input(
+            label="Odor Duration (s)",
+            min_value=1,
+            key="default_odor_duration",
+        )
 
-        tab1_mid_col1, tab1_mid_col2, tab1_mid_col3 = st.columns(3)
-        with tab1_mid_col1:
-            min_odor_time = st.number_input(
-                label="Min. Odor Time (s)",
-                min_value=1,
-                key="default_min_odor_time",
-            )
-        with tab1_mid_col2:
-            max_odor_time = st.number_input(
-                label="Max. Odor Time (s)",
-                min_value=1,
-                key="default_max_odor_time",
-            )
-        with tab1_mid_col3:
-            time_btw_odors = st.number_input(
-                label="Time Between Odors (s)",
-                min_value=1,
-                value=10,
-                key="default_time_btw_odors",
-            )
+    with settings_col4:
+        time_btw_odors = st.number_input(
+            label="Time Between Odors (s)",
+            min_value=1,
+            value=10,
+            key="default_time_btw_odors",
+        )
+
+    # If any values were changed, prompt to save settings again
+    if None not in (
+        mouse_id,
+        roi,
+        num_odors,
+        num_trials,
+        odor_duration,
+        time_btw_odors,
+    ):
+        st.session_state.settings_saved = False
 
     buttons_col1, buttons_col2 = st.columns([0.25, 1])
 
     with buttons_col1:
-        reset = st.button("Reset Settings", on_click=clear_fields)
+        reset = st.button("Reset Settings", on_click=clear_settings_fields)
     if reset:
         st.session_state.settings_saved = False
         st.session_state.acq_params = False
@@ -136,8 +140,7 @@ def main():
                 "date": now_date.strftime("%y%m%d"),
                 "num_odors": num_odors,
                 "num_trials": num_trials,
-                "min_odor_time": min_odor_time,
-                "max_odor_time": max_odor_time,
+                "odor_duration": odor_duration,
                 "time_btw_odors": time_btw_odors,
             }
 
