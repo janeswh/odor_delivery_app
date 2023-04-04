@@ -26,6 +26,8 @@ def initialize_states():
 
     if "acq_params" not in st.session_state:
         st.session_state.acq_params = False
+    if "saved_acq_params" not in st.session_state:
+        st.session_state.saved_acq_params = False
     if "settings_saved" not in st.session_state:
         st.session_state.settings_saved = False
     if "settings_changed" not in st.session_state:
@@ -50,6 +52,7 @@ def clear_settings_fields():
     st.session_state["default_min_odor_time"] = 1
     st.session_state["default_max_odor_time"] = 1
     st.session_state["default_time_btw_odors"] = 10
+    st.session_state["default_exp_type"] = "Random Trials"
 
 
 def get_setting_inputs():
@@ -115,6 +118,7 @@ def get_setting_inputs():
             "Random Trials",
             "Single Trial",
         ),
+        key="default_exp_type",
     )
 
     return (
@@ -134,7 +138,7 @@ def save_settings(settings_dict):
     """
     st.session_state.settings_saved = True
 
-    saved_acq_settings = AcqParams(
+    st.session_state.saved_acq_params = AcqParams(
         settings_dict["date"],
         settings_dict["mouse"],
         settings_dict["roi"],
@@ -230,6 +234,22 @@ def main():
     initialize_states()
 
     make_settings_fields()
+
+    if (
+        st.session_state.settings_saved
+        # and st.session_state.settings_changed == False
+    ):
+        if st.session_state.exp_type == "Random Trials":
+            st.header("Random Trials Settings")
+            st.write(st.session_state.saved_acq_params.date)
+
+            randomize = st.button("Randomize Trials")
+
+            if randomize:
+                st.write("Randomized Odors:")
+
+        if st.session_state.exp_type == "Single Trial":
+            st.write("Single")
 
 
 main()
