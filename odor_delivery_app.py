@@ -29,9 +29,13 @@ def initialize_states():
     if "settings_saved" not in st.session_state:
         st.session_state.settings_saved = False
     if "settings_changed" not in st.session_state:
-        st.session_state.settings_changed = False
+        st.session_state.settings_changed = True
     if "file_name" not in st.session_state:
         st.session_state.file_name = False
+    if "exp_type" not in st.session_state:
+        st.session_state.exp_type = False
+    if "exp_type_selected" not in st.session_state:
+        st.session_state.exp_type_selected = False
 
 
 def clear_settings_fields():
@@ -40,7 +44,7 @@ def clear_settings_fields():
     """
     st.session_state["text"] = ""
     st.session_state["default_roi"] = 1
-    st.session_state["default_num_odors"] = 8
+    st.session_state["default_num_odors"] = 1
     st.session_state["default_num_trials"] = 1
     st.session_state["default_odor_duration"] = 1
     st.session_state["default_min_odor_time"] = 1
@@ -53,7 +57,7 @@ def get_setting_inputs():
     Creates input fields for experiment settings and saves to AcqParams object
     """
     st.header("Session Info")
-    st.session_state.settings_saved = False
+    # st.session_state.settings_saved = False
     mouse_id = False  # Set to false before user input
 
     sessioninfo_col1, sessioninfo_col2 = st.columns(2)
@@ -76,7 +80,7 @@ def get_setting_inputs():
         num_odors = st.selectbox(
             label="Number of Odors",
             options=range(1, 9),
-            index=7,
+            # index=7,
             key="default_num_odors",
         )
 
@@ -104,6 +108,14 @@ def get_setting_inputs():
         )
 
     now_date = datetime.datetime.now()
+
+    st.session_state.exp_type = st.radio(
+        label="Experiment type",
+        options=(
+            "Random Trials",
+            "Single Trial",
+        ),
+    )
 
     return (
         mouse_id,
@@ -138,6 +150,7 @@ def save_settings(settings_dict):
         f"ROI{st.session_state.acq_params['roi']}_Odor"
     )
 
+    st.session_state.settings_changed = False
     st.info(f"Settings saved for {st.session_state.file_name}.")
 
 
@@ -217,19 +230,6 @@ def main():
     initialize_states()
 
     make_settings_fields()
-    # pdb.set_trace()
-
-    if st.session_state.settings_saved:
-        exp_type = st.radio(
-            label="Experiment type",
-            options=(
-                "Random Trials",
-                "Single Trial",
-                st.session_state.acq_params["mouse"],
-            ),
-        )
-
-        # if exp_type == "Single Trial":
 
 
 main()
