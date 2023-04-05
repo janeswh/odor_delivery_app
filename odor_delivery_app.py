@@ -16,8 +16,8 @@ def set_webapp_params():
     """
     Sets the name of the Streamlit app along with intro message
     """
-    st.set_page_config(page_title="Input Acquisition Settings")
-    st.title("Input acquisition settings")
+    st.set_page_config(page_title="Odor Delivery App")
+    st.title("Odor Delivery")
 
 
 def initialize_states():
@@ -35,8 +35,8 @@ def initialize_states():
         st.session_state.settings_saved = False
     if "file_name" not in st.session_state:
         st.session_state.file_name = False
-    if "exp_type" not in st.session_state:
-        st.session_state.exp_type = False
+    if "randomize_trials" not in st.session_state:
+        st.session_state.randomize_trials = False
     if "exp_type_selected" not in st.session_state:
         st.session_state.exp_type_selected = False
     if "experiment_started" not in st.session_state:
@@ -55,34 +55,33 @@ def clear_settings_fields():
     st.session_state["default_min_odor_time"] = 1
     st.session_state["default_max_odor_time"] = 1
     st.session_state["default_time_btw_odors"] = 10
-    st.session_state["default_exp_type"] = "Random Trials"
+    st.session_state["default_exp_type"] = "Yes"
 
 
 def get_setting_inputs():
     """
     Creates input fields for experiment settings and saves to AcqParams object
     """
-    st.header("Session Info")
-    # st.session_state.settings_saved = False
+    st.header("Settings")
+
     mouse_id = False  # Set to false before user input
 
+    (
+        settings_r1_c1,
+        settings_r1_c2,
+        settings_r1_c3,
+        settings_r1_c4,
+    ) = st.columns(4)
+
     sessioninfo_col1, sessioninfo_col2 = st.columns(2)
-    with sessioninfo_col1:
+    with settings_r1_c1:
         mouse_id = st.text_input(
             label="Mouse ID", placeholder="123456-1-2", key="text"
         )
-    with sessioninfo_col2:
+    with settings_r1_c2:
         roi = st.number_input(label="ROI #", min_value=1, key="default_roi")
 
-    st.header("Experiment Settings")
-
-    (
-        settings_col1,
-        settings_col2,
-        settings_col3,
-    ) = st.columns(3)
-
-    with settings_col1:
+    with settings_r1_c3:
         num_odors = st.selectbox(
             label="Number of Odors",
             options=range(1, 9),
@@ -90,14 +89,29 @@ def get_setting_inputs():
             key="default_num_odors",
         )
 
-    with settings_col2:
+    with settings_r1_c4:
+        num_trials = st.number_input(
+            label="Number of Trials per Odor",
+            min_value=1,
+            # value=24,
+            key="default_num_trials",
+        )
+
+    (
+        settings_r2_c1,
+        settings_r2_c2,
+        settings_r2_c3,
+        settings_r2_c4,
+    ) = st.columns(4)
+
+    with settings_r2_c1:
         odor_duration = st.number_input(
             label="Odor Duration (s)",
             min_value=1,
             key="default_odor_duration",
         )
 
-    with settings_col3:
+    with settings_r2_c2:
         time_btw_odors = st.number_input(
             label="Time Between Odors (s)",
             min_value=1,
@@ -107,28 +121,15 @@ def get_setting_inputs():
 
     now_date = datetime.datetime.now()
 
-    settings2_col1, settings2_col2, settings2_col3 = st.columns(3)
-
-    with settings2_col1:
-        st.session_state.exp_type = st.radio(
-            label="Experiment type",
+    with settings_r2_c3:
+        st.session_state.randomize_trials = st.radio(
+            label="Shuffle trials?",
             options=(
-                "Random Trials",
-                "Single Trial",
+                "Yes",
+                "No",
             ),
             key="default_exp_type",
         )
-
-    if st.session_state.exp_type == "Random Trials":
-        with settings2_col2:
-            num_trials = st.number_input(
-                label="Number of Trials per Odor",
-                min_value=1,
-                # value=24,
-                key="default_num_trials",
-            )
-    else:
-        num_trials = 1
 
     return (
         mouse_id,
@@ -156,6 +157,7 @@ def save_settings(settings_dict):
         settings_dict["num_trials"],
         settings_dict["odor_duration"],
         settings_dict["time_btw_odors"],
+        settings_dict["randomize_trials"],
     )
 
     st.session_state.file_name = (
@@ -189,6 +191,7 @@ def make_settings_fields():
         "num_trials": num_trials,
         "odor_duration": odor_duration,
         "time_btw_odors": time_btw_odors,
+        "randomize_trials": st.session_state.randomize_trials,
     }
 
     buttons_col1, buttons_col2 = st.columns([0.25, 1])
@@ -231,13 +234,13 @@ def get_trial_order():
     """
     Displays the order in which odors are delivered for every trial in a table
     """
-    if st.session_state.exp_type == "Random Trials":
-        # randomize = st.button("Randomize Trials Again")
+    if st.session_state.randomize_trials == "Yes":
         trials = randomize_trials()
 
-    if st.session_state.exp_type == "Single Trial":
-        trials = list(
-            range(1, st.session_state.saved_acq_params.num_odors + 1)
+    if st.session_state.randomize_trials == "No":
+        trials = (
+            list(range(1, st.session_state.saved_acq_params.num_odors + 1))
+            * st.session_state.saved_acq_params.num_trials
         )
 
     trial_labels = list(range(1, len(trials) + 1))
@@ -257,12 +260,11 @@ def get_trial_order():
 
     st.table(trials_df.T)
 
-    # Make randomize and send to arduino buttons
+    # Make randomize and start experiment buttons
     buttons2_col1, buttons2_col2 = st.columns([0.4, 1])
 
     if st.session_state.experiment_started == False:
-        if st.session_state.exp_type == "Random Trials":
-            # with buttons2_col1:
+        if st.session_state.randomize_trials == "Yes":
             randomize = buttons2_col1.button("Randomize Trials Again")
             if randomize:
                 trials = randomize_trials()
@@ -275,6 +277,8 @@ def get_trial_order():
 
         if start_exp:
             st.session_state.experiment_started = True
+            # Immediately re-runs script to hide setting input fields
+            st.experimental_rerun()
 
 
 def show_exp_summary():
@@ -312,6 +316,7 @@ class AcqParams:
         num_trials,
         odor_duration,
         time_btw_odors,
+        randomize_trials,
     ):
         self.date = date
         self.mouse_id = mouse_id
@@ -320,22 +325,28 @@ class AcqParams:
         self.num_trials = num_trials
         self.odor_duration = odor_duration
         self.time_btw_odors = time_btw_odors
+        self.randomize_trials = randomize_trials
 
 
 def main():
     set_webapp_params()
     initialize_states()
 
-    make_settings_fields()
+    # If experiment hasn't started, display setting fields
+    if st.session_state.experiment_started == False:
+        make_settings_fields()
 
+    # Otherwise show message that experiment is in progress
+    else:
+        st.warning("Experiment in progress...")
+
+    # Always show summary of settings
     if (
         st.session_state.settings_saved
         and st.session_state.acq_params
         == st.session_state.saved_params_compare
     ):
         show_exp_summary()
-        if st.session_state.experiment_started:
-            st.write("Experiment Started")
 
 
 main()
