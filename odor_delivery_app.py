@@ -39,6 +39,8 @@ def initialize_states():
         st.session_state.exp_type = False
     if "exp_type_selected" not in st.session_state:
         st.session_state.exp_type_selected = False
+    if "experiment_started" not in st.session_state:
+        st.session_state.experiment_started = False
 
 
 def clear_settings_fields():
@@ -255,10 +257,24 @@ def get_trial_order():
 
     st.table(trials_df.T)
 
-    if st.session_state.exp_type == "Random Trials":
-        randomize = st.button("Randomize Trials Again")
-        if randomize:
-            trials = randomize_trials()
+    # Make randomize and send to arduino buttons
+    buttons2_col1, buttons2_col2 = st.columns([0.4, 1])
+
+    if st.session_state.experiment_started == False:
+        if st.session_state.exp_type == "Random Trials":
+            # with buttons2_col1:
+            randomize = buttons2_col1.button("Randomize Trials Again")
+            if randomize:
+                trials = randomize_trials()
+                st.session_state.experiment_started = False
+
+            start_exp = buttons2_col2.button("Start Experiment")
+
+        else:
+            start_exp = buttons2_col1.button("Start Experiment")
+
+        if start_exp:
+            st.session_state.experiment_started = True
 
 
 def show_exp_summary():
@@ -318,6 +334,8 @@ def main():
         == st.session_state.saved_params_compare
     ):
         show_exp_summary()
+        if st.session_state.experiment_started:
+            st.write("Experiment Started")
 
 
 main()
