@@ -2,6 +2,7 @@ import serial
 import tkinter
 from tkinter import *
 import streamlit as st
+import pandas as pd
 import time
 import datetime
 import random
@@ -28,10 +29,10 @@ def initialize_states():
         st.session_state.acq_params = False
     if "saved_acq_params" not in st.session_state:
         st.session_state.saved_acq_params = False
+    if "saved_params_compare" not in st.session_state:
+        st.session_state.saved_params_compare = False
     if "settings_saved" not in st.session_state:
         st.session_state.settings_saved = False
-    if "settings_changed" not in st.session_state:
-        st.session_state.settings_changed = True
     if "file_name" not in st.session_state:
         st.session_state.file_name = False
     if "exp_type" not in st.session_state:
@@ -77,8 +78,8 @@ def get_setting_inputs():
         settings_col1,
         settings_col2,
         settings_col3,
-        settings_col4,
-    ) = st.columns(4)
+    ) = st.columns(3)
+
     with settings_col1:
         num_odors = st.selectbox(
             label="Number of Odors",
@@ -88,21 +89,13 @@ def get_setting_inputs():
         )
 
     with settings_col2:
-        num_trials = st.number_input(
-            label="Number of Trials per Odor",
-            min_value=1,
-            # value=24,
-            key="default_num_trials",
-        )
-
-    with settings_col3:
         odor_duration = st.number_input(
             label="Odor Duration (s)",
             min_value=1,
             key="default_odor_duration",
         )
 
-    with settings_col4:
+    with settings_col3:
         time_btw_odors = st.number_input(
             label="Time Between Odors (s)",
             min_value=1,
@@ -112,14 +105,28 @@ def get_setting_inputs():
 
     now_date = datetime.datetime.now()
 
-    st.session_state.exp_type = st.radio(
-        label="Experiment type",
-        options=(
-            "Random Trials",
-            "Single Trial",
-        ),
-        key="default_exp_type",
-    )
+    settings2_col1, settings2_col2, settings2_col3 = st.columns(3)
+
+    with settings2_col1:
+        st.session_state.exp_type = st.radio(
+            label="Experiment type",
+            options=(
+                "Random Trials",
+                "Single Trial",
+            ),
+            key="default_exp_type",
+        )
+
+    if st.session_state.exp_type == "Random Trials":
+        with settings2_col2:
+            num_trials = st.number_input(
+                label="Number of Trials per Odor",
+                min_value=1,
+                # value=24,
+                key="default_num_trials",
+            )
+    else:
+        num_trials = 1
 
     return (
         mouse_id,
@@ -137,6 +144,7 @@ def save_settings(settings_dict):
     Saves experiment settings to AcqParams object
     """
     st.session_state.settings_saved = True
+    st.session_state.saved_params_compare = settings_dict
 
     st.session_state.saved_acq_params = AcqParams(
         settings_dict["date"],
@@ -154,7 +162,6 @@ def save_settings(settings_dict):
         f"ROI{st.session_state.acq_params['roi']}_Odor"
     )
 
-    st.session_state.settings_changed = False
     st.info(f"Settings saved for {st.session_state.file_name}.")
 
 
@@ -182,12 +189,6 @@ def make_settings_fields():
         "time_btw_odors": time_btw_odors,
     }
 
-    # If any values were changed, prompt to save settings again
-    for v in st.session_state.acq_params.values():
-        if v is not None:
-            # st.session_state.settings_saved = False
-            st.session_state.settings_changed = True
-
     buttons_col1, buttons_col2 = st.columns([0.25, 1])
 
     with buttons_col1:
@@ -197,12 +198,88 @@ def make_settings_fields():
         st.session_state.acq_params = False
         st.session_state.file_name = False
 
-    if mouse_id:
+    if (
+        mouse_id  # Mouse id has been entered
+        # If any values were changed, prompt to save settings again
+        and st.session_state.acq_params
+        != st.session_state.saved_params_compare
+    ):
         with buttons_col2:
             save_params = st.button("Save Settings")
 
         if save_params:  # Save dict to AcqParams object
             save_settings(st.session_state.acq_params)
+
+
+def randomize_trials():
+    """
+    Randomizes the order of odor delivery
+    """
+    trials = (
+        list(range(1, st.session_state.saved_acq_params.num_odors + 1))
+        * st.session_state.saved_acq_params.num_trials
+    )
+
+    random.shuffle(trials)
+
+    return trials
+
+
+def get_trial_order():
+    """
+    Displays the order in which odors are delivered for every trial in a table
+    """
+    if st.session_state.exp_type == "Random Trials":
+        # randomize = st.button("Randomize Trials Again")
+        trials = randomize_trials()
+
+    if st.session_state.exp_type == "Single Trial":
+        trials = list(
+            range(1, st.session_state.saved_acq_params.num_odors + 1)
+        )
+
+    trial_labels = list(range(1, len(trials) + 1))
+    trials_df = pd.DataFrame({"Trial": trial_labels, "Odor #": trials})
+
+    st.markdown("**Odor order by trials:**")
+
+    # CSS to inject contained in a string, to hide df indices
+    hide_table_row_index = """
+                <style>
+                thead tr th {display:none}
+                </style>
+                """
+
+    # Inject CSS with Markdown
+    st.markdown(hide_table_row_index, unsafe_allow_html=True)
+
+    st.table(trials_df.T)
+
+    if st.session_state.exp_type == "Random Trials":
+        randomize = st.button("Randomize Trials Again")
+        if randomize:
+            trials = randomize_trials()
+
+
+def show_exp_summary():
+    """
+    Creates layout for experiment settings summary
+    """
+    st.markdown("""---""")
+    st.header("Trial info")
+    st.markdown(
+        f"""
+        **Total # of trials:** {st.session_state.saved_acq_params.num_trials*st.session_state.saved_acq_params.num_odors}
+        -- {st.session_state.saved_acq_params.num_trials} trial(s) for each
+        of {st.session_state.saved_acq_params.num_odors} odors
+        
+        **Odor duration:** {st.session_state.saved_acq_params.odor_duration}s
+
+        **Time between odors:** {st.session_state.saved_acq_params.time_btw_odors}s
+        """
+    )
+
+    get_trial_order()
 
 
 class AcqParams:
@@ -237,19 +314,10 @@ def main():
 
     if (
         st.session_state.settings_saved
-        # and st.session_state.settings_changed == False
+        and st.session_state.acq_params
+        == st.session_state.saved_params_compare
     ):
-        if st.session_state.exp_type == "Random Trials":
-            st.header("Random Trials Settings")
-            st.write(st.session_state.saved_acq_params.date)
-
-            randomize = st.button("Randomize Trials")
-
-            if randomize:
-                st.write("Randomized Odors:")
-
-        if st.session_state.exp_type == "Single Trial":
-            st.write("Single")
+        show_exp_summary()
 
 
 main()
