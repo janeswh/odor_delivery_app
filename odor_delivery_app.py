@@ -59,9 +59,6 @@ def initialize_states():
     if "rand_btn_clicked" not in st.session_state:
         st.session_state.rand_btn_clicked = False
 
-    if "rand_count" not in st.session_state:
-        st.session_state.rand_count = False
-
 
 def initialize_arduino():
     """
@@ -284,77 +281,43 @@ def randomize_trials(button=False):
     )
 
     random.shuffle(trials)
-    st.session_state.rand_count += 1
-    print(f"got randomized #{st.session_state.rand_count}")
 
     if button:
         st.session_state.rand_btn_clicked = True
 
     st.session_state.prelim_trials = trials
 
-    # return trials
-
 
 def get_trial_order():
     """
     Displays the order in which odors are delivered for every trial in a table
     """
-    # if st.session_state.trial_order is False:
 
-    if (
-        st.session_state.trial_order_saved is False
-        and st.session_state.trial_order is False
-        and st.session_state.experiment_started is False
-    ):
+    if st.session_state.trial_order_saved is False:
         if (
             st.session_state.randomize_trials == "Yes"
             and st.session_state.rand_btn_clicked is False
         ):
-            # trials = randomize_trials()
-            # st.session_state.prelim_trials = randomize_trials()
             randomize_trials()
-            print("auto randomized")
 
         if st.session_state.randomize_trials == "No":
-            # trials = (
-            #     list(range(1, st.session_state.saved_acq_params.num_odors + 1))
-            #     * st.session_state.saved_acq_params.num_trials
-            # )
             st.session_state.prelim_trials = (
                 list(range(1, st.session_state.saved_acq_params.num_odors + 1))
                 * st.session_state.saved_acq_params.num_trials
             )
 
-        # print_trial_order(trials)
         print_trial_order(st.session_state.prelim_trials)
-    else:
-        print(st.session_state.trial_order)
 
-    # Make randomize and start experiment buttons
-    buttons2_col1, buttons2_col2 = st.columns([0.4, 1])
+        # Make randomize and start experiment buttons
+        buttons2_col1, buttons2_col2 = st.columns([0.4, 1])
 
-    if (
-        st.session_state.experiment_started is False
-        and st.session_state.trial_order_saved is False
-    ):
         if st.session_state.randomize_trials == "Yes":
-            # randomize = buttons2_col1.button("Randomize Trials Again")
-            # if randomize:
-            #     st.session_state.prelim_trials = randomize_trials()
-            #     st.session_state.rand_btn_clicked = True
             buttons2_col1.button(
                 "Randomize Trials Again",
                 on_click=randomize_trials,
                 args=((True,)),
             )
 
-            # start_exp = buttons2_col2.button("Start Experiment")
-            # if buttons2_col2.button("Start Experiment"):
-            #     st.write("button pressed")
-            #     # st.session_state.experiment_started = True
-            #     st.session_state.trial_order = trials
-            #     start_experiment()
-            #     st.experimental_rerun()
             buttons2_col2.button(
                 "Start Experiment",
                 on_click=save_trial_order,
@@ -362,24 +325,13 @@ def get_trial_order():
             )
 
         else:
-            # if buttons2_col1.button("Start Experiment"):
-            #     st.session_state.trial_order = trials
-            #     start_experiment()
-            #     st.experimental_rerun()
             buttons2_col1.button(
                 "Start Experiment",
                 on_click=save_trial_order,
                 args=((st.session_state.prelim_trials,)),
             )
-
-        # start_exp =
-
-        # if start_exp:
-
-        #     start_experiment(trials, trials_df)
-
-        #     # Immediately re-runs script to hide setting input fields
-        #     st.experimental_rerun()
+    else:
+        print_trial_order(st.session_state.trial_order)
 
 
 def start_experiment():
@@ -389,17 +341,17 @@ def start_experiment():
     """
     st.session_state.experiment_started = True
 
-    # # Initialize Arduino
-    # if st.session_state.arduino_initialized == False:
-    #     initialize_arduino()
-    # if st.session_state.arduino_initialized == True:
-    #     st.info("Arduino initialized and on stand-by")
+    # Initialize Arduino
+    if st.session_state.arduino_initialized == False:
+        initialize_arduino()
+    if st.session_state.arduino_initialized == True:
+        st.info("Arduino initialized and on stand-by")
 
-    #     arduino_session = ArduinoSession(
-    #         st.session_state.saved_acq_params, trials, trials_df
-    #     )
+        arduino_session = ArduinoSession(
+            st.session_state.saved_acq_params, st.session_state.trial_order
+        )
 
-    # close_arduino()
+    close_arduino()
 
 
 def print_trial_order(trials):
@@ -475,8 +427,9 @@ class ArduinoSession:
     Defines the class for holding signals sent to the arduino per session
     """
 
-    def __init__(self, session_params, odor_sequence, trials_df):
+    def __init__(self, session_params, odor_sequence):
         self.acq_params = session_params
+        self.trial_order = odor_sequence
 
         self.trig_signal = False  # Whether Arduino has triggered microscope
         self.delay_time = 0  # Time btw odors? don't think I need
@@ -535,13 +488,7 @@ def main():
         == st.session_state.saved_params_compare
     ):
         show_exp_summary()
-
-        if st.session_state.experiment_started == False:
-            st.write("getting trial order")
-            get_trial_order()
-
-        else:  # If trial order has already been set, show trial order
-            print_trial_order(st.session_state.trial_order)
+        get_trial_order()
 
 
 main()
