@@ -2,6 +2,7 @@ import serial
 import tkinter
 from tkinter import *
 import streamlit as st
+from stqdm import stqdm
 import pandas as pd
 import time
 import datetime
@@ -64,13 +65,15 @@ def initialize_arduino():
     """
     Initiate the Arduino
     """
-
     arduino = serial.Serial()
+
+    # pdb.set_trace()
     arduino.port = "COM8"  # Change COM PORT if COMPort error occurs
     arduino.baudrate = 9600
     arduino.timeout = 2
     arduino.setRTS(FALSE)
-
+    time.sleep(2)
+    # two seconds for arduino to reset and port to open
     arduino.open()
 
     st.session_state.arduino_initialized = True
@@ -104,10 +107,8 @@ def save_trial_order(trials):
     """
     Saves the prelim odor trial orders
     """
-    print(trials)
     st.session_state.trial_order = trials
     st.session_state.trial_order_saved = True
-    print(st.session_state.trial_order)
 
     start_experiment()
     # st.experimental_rerun()
@@ -351,7 +352,43 @@ def start_experiment():
             st.session_state.saved_acq_params, st.session_state.trial_order
         )
 
+        arduino_session.save_solenoid_order_csv()
+
+        if arduino_session.trig_signal is False:
+            while (
+                arduino_session.trig_signal is False
+                and arduino_session.sequence_complete is False
+            ):
+                # Check whether arduino is connected
+                new_arduino_message = arduino_session.get_arduino_msg()
+                if "y" in new_arduino_message:
+                    print("Arduino is connected")
+                    arduino_session.trig_signal = True
+
+                    arduino_session.generate_arduino_str()
+
+                    arduino_session.save_solenoid_timing_csv()
+
+                    arduino_session.trig_signal = False
+
+                else:
+                    pass
+
+                # arduino_session.make_str_signals()
+
+    pdb.set_trace()
     close_arduino()
+    pdb.set_trace()
+
+
+def make_trials_df(trials):
+    """
+    Puts odor trials into a df
+    """
+    trial_labels = list(range(1, len(trials) + 1))
+    trials_df = pd.DataFrame({"Trial": trial_labels, "Odor #": trials})
+
+    return trials_df
 
 
 def print_trial_order(trials):
@@ -359,8 +396,7 @@ def print_trial_order(trials):
     Prints a table listing the trial number and odor used for each trial
     """
 
-    trial_labels = list(range(1, len(trials) + 1))
-    trials_df = pd.DataFrame({"Trial": trial_labels, "Odor #": trials})
+    trials_df = make_trials_df(trials)
 
     st.markdown("**Odor order by trials:**")
 
@@ -429,19 +465,18 @@ class ArduinoSession:
 
     def __init__(self, session_params, odor_sequence):
         self.acq_params = session_params
-        self.trial_order = odor_sequence
 
         self.trig_signal = False  # Whether Arduino has triggered microscope
         self.delay_time = 0  # Time btw odors? don't think I need
 
-        self.finished_order = (
+        self.sequence_complete = (
             False  # Whether odor delivery sequence has finished
         )
 
         self.solenoid_order = odor_sequence  # Double check
 
         ###For predicted timings:
-        self.trigger = 100  # in milliseconds
+        self.trigger = 100  # in milliseconds   what is this??
         self.iniStart = datetime.datetime.now()
         self.iniHour = (self.iniStart).hour
         self.iniMinute = (self.iniStart).minute
@@ -453,26 +488,173 @@ class ArduinoSession:
 
         # Testing new format to directly go into miliseconds
         self.init_time = datetime.datetime.now().isoformat(
-            timespec="milliseconds"
+            "|", timespec="milliseconds"
         )
 
         ###Keep track of when the solenoids were activated
-        self.actSolenoid = []  # Contains times that solenoids were activated
-        self.endSolenoid = []  # Contains times that solenoids were closed
+        self.time_solenoid_on = (
+            []
+        )  # Contains times that solenoids were activated
+        self.time_solenoid_off = (
+            []
+        )  # Contains times that solenoids were closed
         self.sent = 0  # if sent = 1, then that means a string has been sent to the arduino and we need to wait for it to be done
         self.timeTTLName = "TTL to microscope sent at: "
-        self.timeTTL = []
+        self.time_scope_TTL = []
 
-    def make_solenoid_csv(self):
+    def get_arduino_msg(self):
+        """
+        Gets message back from arduino after sending it str
+        """
+
+        # if st.session_state.arduino.in_waiting:
+        if st.session_state.arduino.isOpen():
+            sent_info = st.session_state.arduino.readline().strip()
+            # sent_info = st.session_state.arduino.read()
+            decode_info = sent_info.decode("utf-8")
+        else:
+            decode_info = None
+
+        return decode_info
+
+    def parse_arduino_msg(self, solenoid, placeholder):
+        """
+        Translates the message sent back from arduino into informative
+        timestamps. Prints the info into placeholder textbox
+        """
+        arduino_msg_received = self.get_arduino_msg()
+
+        if (
+            arduino_msg_received is None or "y" in arduino_msg_received
+        ):  ##update: check if y is anywhere in the messageReceived in case arduino sends too many at once
+            pass
+        elif arduino_msg_received == "9":
+            # Time when microscope has been triggered via TTL
+            time_TTL = datetime.datetime.now().isoformat(
+                "|", timespec="milliseconds"
+            )
+            self.time_scope_TTL.append(time_TTL)
+
+            placeholder.info(
+                f"odor {solenoid} microscope triggered at {time_TTL}"
+            )
+
+            time.sleep(2)
+
+        elif arduino_msg_received == "1":
+            time_solenoid_on = datetime.datetime.now().isoformat(
+                "|", timespec="milliseconds"
+            )
+            self.time_solenoid_on.append(time_solenoid_on)
+            placeholder.info(f"odor {solenoid} released at {time_solenoid_on}")
+
+            time.sleep(2)
+        elif arduino_msg_received == "2":
+            time_solenoid_off = datetime.datetime.now().isoformat(
+                "|", timespec="milliseconds"
+            )
+            self.time_solenoid_off.append(time_solenoid_off)
+            placeholder.info(f"odor {solenoid} stopped at {time_solenoid_off}")
+
+            time.sleep(2)
+        elif arduino_msg_received == "3":
+            self.sent = 0
+            placeholder.info("delay stopped, send next solenoid info")
+
+            time.sleep(2)
+
+    def generate_arduino_str(self):
+        """
+        Generates arduino execution strs in format "x, y, z" where
+        x = solenoid number
+        y = odor duration (s)
+        z = time between odors (s)
+        """
+
+        # Adds progress bar
+        bar = stqdm(range(len(self.solenoid_order)), desc=f"Executing Trial")
+
+        # Creates plateholder container for arduino progress msgs
+        arduino_output_placeholder = st.empty()
+
+        # for solenoid in self.solenoid_order:
+        for trial in bar:
+            bar.set_description(f"Executing Trial {trial+1}", refresh=True)
+            to_be_sent = (
+                # f"{solenoid},{self.acq_params.odor_duration},"
+                f"{self.solenoid_order[trial]},{self.acq_params.odor_duration},"
+                f"{self.acq_params.time_btw_odors}"
+            )
+            # to_be_sent = "5"
+
+            self.sent = 1
+            time.sleep(2)  # Two seconds for arduino to reset
+
+            # Send the information to arduino and wait for something to come back
+            st.session_state.arduino.write(to_be_sent.encode())
+
+            while self.sent == 1:
+                # self.parse_arduino_msg(solenoid, arduino_output_placeholder)
+                self.parse_arduino_msg(
+                    self.solenoid_order[trial], arduino_output_placeholder
+                )
+
+                # Mark end after last trial
+                if trial + 1 == len(bar):
+                    arduino_output_placeholder.info(
+                        "Odor delivery sequence complete."
+                    )
+                    self.sequence_complete = True
+
+    def save_solenoid_order_csv(self):
         """
         Creates the solenoid .csv file containing solenoid info and timings
+        Columns: Trial, Odor #, Frame #, Date, Trigger Timestamp, release timestamp,
+        stopped timestamp
+
         """
+        csv_name = (
+            f"{self.acq_params.date}_{self.acq_params.mouse_id}_ROI"
+            f"{self.acq_params.roi}_solenoid_order.csv"
+        )
+        trials_df = make_trials_df(self.solenoid_order)
+        trials_df.to_csv(csv_name, index=False)
+
+    def save_solenoid_timing_csv(self):
+        """
+        Saves the timestamps for when each solenoid was triggered, opened,
+        and closed to a .csv file.
+        """
+        csv_name = (
+            f"{self.acq_params.date}_{self.acq_params.mouse_id}_ROI"
+            f"{self.acq_params.roi}_solenoid_timing.csv"
+        )
+
+        trial_labels = list(range(1, len(self.solenoid_order) + 1))
+        timings_df = pd.DataFrame(
+            {
+                "Trial": trial_labels,
+                "Odor #": self.solenoid_order,
+                "Microscope Triggered": self.time_scope_TTL,
+                "Solenoid opened": self.time_solenoid_on,
+                "Solenoid closed": self.time_solenoid_off,
+            }
+        )
+
+        timings_df.to_csv(csv_name, index=False)
+
+    def make_str_signals(self):
+        """
+        Compile a string to be sent to Arduino to execute
+        """
+        for solenoid in self.solenoid_order:
+            print(solenoid)
 
 
 def main():
     set_webapp_params()
     initialize_states()
-    print(f"random button clicked is {st.session_state.rand_btn_clicked}")
+
     # If experiment hasn't started, display setting fields
     if st.session_state.experiment_started == False:
         make_settings_fields()
