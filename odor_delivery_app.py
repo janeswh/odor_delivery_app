@@ -67,12 +67,11 @@ def initialize_arduino():
     """
     arduino = serial.Serial()
 
-    # pdb.set_trace()
-    arduino.port = "COM8"  # Change COM PORT if COMPort error occurs
+    arduino.port = "COM7"  # Change COM PORT if COMPort error occurs
     arduino.baudrate = 9600
     arduino.timeout = 2
     arduino.setRTS(FALSE)
-    time.sleep(2)
+    # time.sleep(2)
     # two seconds for arduino to reset and port to open
     arduino.open()
 
@@ -346,7 +345,10 @@ def start_experiment():
     if st.session_state.arduino_initialized == False:
         initialize_arduino()
     if st.session_state.arduino_initialized == True:
-        st.info("Arduino initialized and on stand-by")
+        st.info(
+            "Arduino initialized and on stand-by. "
+            "Press Start in ThorImage to begin img acquisition."
+        )
 
         arduino_session = ArduinoSession(
             st.session_state.saved_acq_params, st.session_state.trial_order
@@ -373,8 +375,6 @@ def start_experiment():
 
                 else:
                     pass
-
-                # arduino_session.make_str_signals()
 
     pdb.set_trace()
     close_arduino()
@@ -517,7 +517,7 @@ class ArduinoSession:
 
         return decode_info
 
-    def parse_arduino_msg(self, solenoid, placeholder):
+    def parse_arduino_msg(self, trial, solenoid, placeholder):
         """
         Translates the message sent back from arduino into informative
         timestamps. Prints the info into placeholder textbox
@@ -536,32 +536,42 @@ class ArduinoSession:
             self.time_scope_TTL.append(time_TTL)
 
             placeholder.info(
-                f"odor {solenoid} microscope triggered at {time_TTL}"
+                f"trial {trial}, odor {solenoid} microscope triggered at "
+                f"{time_TTL}"
             )
 
-            time.sleep(2)
+            # time.sleep(2)
 
         elif arduino_msg_received == "1":
             time_solenoid_on = datetime.datetime.now().isoformat(
                 "|", timespec="milliseconds"
             )
             self.time_solenoid_on.append(time_solenoid_on)
-            placeholder.info(f"odor {solenoid} released at {time_solenoid_on}")
+            placeholder.info(
+                f"trial {trial}, odor {solenoid} released at "
+                f"{time_solenoid_on}"
+            )
 
-            time.sleep(2)
+            # time.sleep(2)
         elif arduino_msg_received == "2":
             time_solenoid_off = datetime.datetime.now().isoformat(
                 "|", timespec="milliseconds"
             )
             self.time_solenoid_off.append(time_solenoid_off)
-            placeholder.info(f"odor {solenoid} stopped at {time_solenoid_off}")
+            placeholder.info(
+                f"trial {trial}, odor {solenoid} stopped at "
+                f"{time_solenoid_off}"
+            )
 
-            time.sleep(2)
+            # time.sleep(2)
         elif arduino_msg_received == "3":
             self.sent = 0
-            placeholder.info("delay stopped, send next solenoid info")
+            placeholder.info(
+                "trial {trial}, odor {solenoid} delay stopped, send next "
+                "solenoid info"
+            )
 
-            time.sleep(2)
+            # time.sleep(2)
 
     def generate_arduino_str(self):
         """
@@ -588,7 +598,7 @@ class ArduinoSession:
             # to_be_sent = "5"
 
             self.sent = 1
-            time.sleep(2)  # Two seconds for arduino to reset
+            # time.sleep(2)  # Two seconds for arduino to reset
 
             # Send the information to arduino and wait for something to come back
             st.session_state.arduino.write(to_be_sent.encode())
@@ -596,7 +606,9 @@ class ArduinoSession:
             while self.sent == 1:
                 # self.parse_arduino_msg(solenoid, arduino_output_placeholder)
                 self.parse_arduino_msg(
-                    self.solenoid_order[trial], arduino_output_placeholder
+                    trial,
+                    self.solenoid_order[trial],
+                    arduino_output_placeholder,
                 )
 
                 # Mark end after last trial
