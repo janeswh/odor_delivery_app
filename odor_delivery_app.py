@@ -1,6 +1,8 @@
 import serial
-import tkinter
+import os
+import tkinter as tk
 from tkinter import *
+from tkinter.filedialog import askdirectory
 import streamlit as st
 from stqdm import stqdm
 import pandas as pd
@@ -32,6 +34,8 @@ def initialize_states():
     if "arduino" not in st.session_state:
         st.session_state.arduino = False
 
+    if "dir_path" not in st.session_state:
+        st.session_state.dir_path = False
     if "acq_params" not in st.session_state:
         st.session_state.acq_params = False
     if "saved_acq_params" not in st.session_state:
@@ -85,6 +89,63 @@ def close_arduino():
     """
     st.session_state.arduino.close()
     st.session_state.arduino_initialized = False
+
+
+def make_pick_folder_button():
+    """
+    Makes the "Pick folder" button and checks whether it has been clicked.
+    """
+    clicked = st.button("Choose directory")
+    return clicked
+
+
+def pop_folder_selector():
+    """
+    Pops up a dialog to select folder. Won't pop up again when the script
+    re-runs due to user interaction.
+    """
+    # Set up tkinter
+    root = tk.Tk()
+    root.withdraw()
+
+    # Make folder picker dialog appear on top of other windows
+    root.wm_attributes("-topmost", 1)
+
+    dir_path = askdirectory(master=root)
+
+    return dir_path
+
+
+def get_main_directory():
+    """
+    Prompts user for the folder containing txt files to be analyzed.
+    """
+
+    dir_path = st.text_input("Selected folder:", askdirectory())
+    folder = os.path.basename(dir_path)
+
+    return dir_path, folder
+
+
+def get_selected_folder_info(dir_path):
+    """
+    Gets the date, animal ID, and ROI info from the selected folder.
+    """
+    st.write("Selected folder:")
+    st.info(dir_path)
+
+    try:
+        # folder = os.path.basename(dir_path)
+        folder = dir_path
+
+    except IndexError:
+        folder = None
+        st.error(
+            "Please ensure that you've selected the desired folder by "
+            "double clicking to open it in the file dialog."
+        )
+
+    return folder
 
 
 def clear_settings_fields():
@@ -186,6 +247,15 @@ def get_setting_inputs():
             key="default_exp_type",
         )
 
+    with settings_r2_c4:
+        clicked = make_pick_folder_button()
+        folder = None
+        if clicked:
+            st.session_state.dir_path = pop_folder_selector()
+
+    if st.session_state.dir_path:
+        folder = get_selected_folder_info(st.session_state.dir_path)
+
     return (
         mouse_id,
         roi,
@@ -194,6 +264,7 @@ def get_setting_inputs():
         odor_duration,
         time_btw_odors,
         now_date,
+        folder,
     )
 
 
@@ -205,6 +276,7 @@ def save_settings(settings_dict):
     st.session_state.saved_params_compare = settings_dict
 
     st.session_state.saved_acq_params = AcqParams(
+        settings_dict["dir_path"],
         settings_dict["date"],
         settings_dict["mouse"],
         settings_dict["roi"],
@@ -236,9 +308,11 @@ def make_settings_fields():
         odor_duration,
         time_btw_odors,
         now_date,
+        folder,
     ) = get_setting_inputs()
 
     st.session_state.acq_params = {
+        "dir_path": folder,
         "mouse": mouse_id,
         "roi": roi,
         "date": now_date.strftime("%y%m%d"),
@@ -260,6 +334,7 @@ def make_settings_fields():
 
     if (
         mouse_id  # Mouse id has been entered
+        and folder
         # If any values were changed, prompt to save settings again
         and st.session_state.acq_params
         != st.session_state.saved_params_compare
@@ -375,10 +450,22 @@ def start_experiment():
 
                 else:
                     pass
+    if (
+        arduino_session.trig_signal is False
+        and arduino_session.sequence_complete is True
+    ):
+        # st.info("Experiment finished.")
+        close_arduino()
+        arduino_session.sequence_complete = False
 
-    # pdb.set_trace()
-    # close_arduino()
-    # pdb.set_trace()
+        for key in st.session_state.keys():
+            del st.session_state[key]
+
+        # pdb.set_trace()
+
+        start_new_experiment = st.button("Start new experiment")
+        if start_new_experiment:
+            st.experimental_rerun()
 
 
 def make_trials_df(trials):
@@ -439,6 +526,7 @@ class AcqParams:
 
     def __init__(
         self,
+        dir_path,
         date,
         mouse_id,
         roi,
@@ -448,6 +536,7 @@ class AcqParams:
         time_btw_odors,
         randomize_trials,
     ):
+        self.dir_path = dir_path
         self.date = date
         self.mouse_id = mouse_id
         self.roi = roi
@@ -592,6 +681,20 @@ class ArduinoSession:
                     "solenoid info"
                 )
 
+                # if trial + 1 != self.num_trials:
+                #     placeholder.info(
+                #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                #         "solenoid info"
+                #     )
+
+                #     print(
+                #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                #         "solenoid info"
+                #     )
+                # else:
+                #     placeholder.info("Odor delivery sequence complete.")
+                #     self.sequence_complete = True
+
                 self.sent = 0
 
                 # time.sleep(2)
@@ -633,12 +736,15 @@ class ArduinoSession:
                     arduino_output_placeholder,
                 )
 
-                # Mark end after last trial
-                if trial + 1 == len(bar):
-                    arduino_output_placeholder.info(
-                        "Odor delivery sequence complete."
-                    )
-                    self.sequence_complete = True
+                # # Mark end after last trial
+                # if trial + 1 == len(bar):
+
+        self.sequence_complete = True
+        self.trig_signal = False
+
+        arduino_output_placeholder.info("Odor delivery sequence complete.")
+
+        st.info("Experiment finished.")
 
     def save_solenoid_order_csv(self):
         """
@@ -651,8 +757,11 @@ class ArduinoSession:
             f"{self.acq_params.date}_{self.acq_params.mouse_id}_ROI"
             f"{self.acq_params.roi}_solenoid_order.csv"
         )
+
+        path = os.path.join(self.acq_params.dir_path, csv_name)
         trials_df = make_trials_df(self.solenoid_order)
-        trials_df.to_csv(csv_name, index=False)
+
+        trials_df.to_csv(path, index=False)
 
     def save_solenoid_timing_csv(self):
         """
@@ -663,6 +772,7 @@ class ArduinoSession:
             f"{self.acq_params.date}_{self.acq_params.mouse_id}_ROI"
             f"{self.acq_params.roi}_solenoid_timing.csv"
         )
+        path = os.path.join(self.acq_params.dir_path, csv_name)
 
         trial_labels = list(range(1, len(self.solenoid_order) + 1))
         timings_df = pd.DataFrame(
@@ -675,7 +785,7 @@ class ArduinoSession:
             }
         )
 
-        timings_df.to_csv(csv_name, index=False)
+        timings_df.to_csv(path, index=False)
 
     def make_str_signals(self):
         """
