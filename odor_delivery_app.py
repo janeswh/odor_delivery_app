@@ -376,9 +376,9 @@ def start_experiment():
                 else:
                     pass
 
-    pdb.set_trace()
-    close_arduino()
-    pdb.set_trace()
+    # pdb.set_trace()
+    # close_arduino()
+    # pdb.set_trace()
 
 
 def make_trials_df(trials):
@@ -530,65 +530,71 @@ class ArduinoSession:
             pass
 
         else:
-            placeholder.info(
-                f"trial {trial+1}, odor {solenoid} microscope triggered at "
-            )
+            if arduino_msg_received == "9":
+                # Time when microscope has been triggered via TTL
+                time_TTL = datetime.datetime.now().isoformat(
+                    "|", timespec="milliseconds"
+                )
+                self.time_scope_TTL.append(time_TTL)
 
-            placeholder.info(f"trial {trial+1}, odor {solenoid} released at ")
+                placeholder.info(
+                    f"trial {trial+1}, odor {solenoid} microscope triggered at "
+                    f"{time_TTL}"
+                )
 
-            placeholder.info(f"trial {trial+1}, odor {solenoid} stopped at ")
+                print(
+                    f"trial {trial+1}, odor {solenoid} microscope triggered at "
+                    f"{time_TTL}"
+                )
 
-            placeholder.info(
-                f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-                "solenoid info"
-            )
+                # time.sleep(2)
 
-            self.sent = 0
+            elif arduino_msg_received == "1":
+                time_solenoid_on = datetime.datetime.now().isoformat(
+                    "|", timespec="milliseconds"
+                )
+                self.time_solenoid_on.append(time_solenoid_on)
+                placeholder.info(
+                    f"trial {trial+1}, odor {solenoid} released at "
+                    f"{time_solenoid_on}"
+                )
 
-        # elif arduino_msg_received == "9":
-        #     # Time when microscope has been triggered via TTL
-        #     time_TTL = datetime.datetime.now().isoformat(
-        #         "|", timespec="milliseconds"
-        #     )
-        #     self.time_scope_TTL.append(time_TTL)
+                print(
+                    f"trial {trial+1}, odor {solenoid} released at "
+                    f"{time_solenoid_on}"
+                )
 
-        #     placeholder.info(
-        #         f"trial {trial+1}, odor {solenoid} microscope triggered at "
-        #         f"{time_TTL}"
-        #     )
+                # time.sleep(2)
+            elif arduino_msg_received == "2":
+                time_solenoid_off = datetime.datetime.now().isoformat(
+                    "|", timespec="milliseconds"
+                )
+                self.time_solenoid_off.append(time_solenoid_off)
+                placeholder.info(
+                    f"trial {trial+1}, odor {solenoid} stopped at "
+                    f"{time_solenoid_off}"
+                )
 
-        #     # time.sleep(2)
+                print(
+                    f"trial {trial+1}, odor {solenoid} stopped at "
+                    f"{time_solenoid_off}"
+                )
 
-        # elif arduino_msg_received == "1":
-        #     time_solenoid_on = datetime.datetime.now().isoformat(
-        #         "|", timespec="milliseconds"
-        #     )
-        #     self.time_solenoid_on.append(time_solenoid_on)
-        #     placeholder.info(
-        #         f"trial {trial+1}, odor {solenoid} released at "
-        #         f"{time_solenoid_on}"
-        #     )
+                # time.sleep(2)
+            elif arduino_msg_received == "3":
+                placeholder.info(
+                    f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                    "solenoid info"
+                )
 
-        #     # time.sleep(2)
-        # elif arduino_msg_received == "2":
-        #     time_solenoid_off = datetime.datetime.now().isoformat(
-        #         "|", timespec="milliseconds"
-        #     )
-        #     self.time_solenoid_off.append(time_solenoid_off)
-        #     placeholder.info(
-        #         f"trial {trial+1}, odor {solenoid} stopped at "
-        #         f"{time_solenoid_off}"
-        #     )
+                print(
+                    f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                    "solenoid info"
+                )
 
-        #     # time.sleep(2)
-        # elif arduino_msg_received == "3":
-        #     self.sent = 0
-        #     placeholder.info(
-        #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-        #         "solenoid info"
-        #     )
+                self.sent = 0
 
-        # time.sleep(2)
+                # time.sleep(2)
 
     def generate_arduino_str(self):
         """
