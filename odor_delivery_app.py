@@ -436,38 +436,38 @@ def start_experiment():
     # Initialize Arduino
     # if st.session_state.arduino_initialized == False:
     #     initialize_arduino()
-    if st.session_state.arduino_initialized == True:
-        st.info(
-            "Arduino initialized and on stand-by. "
-            "Press Start in ThorImage to begin img acquisition."
-        )
+    # if st.session_state.arduino_initialized == True:
+    #     st.info(
+    #         "Arduino initialized and on stand-by. "
+    #         "Press Start in ThorImage to begin img acquisition."
+    #     )
 
-        arduino_session = ArduinoSession(
-            st.session_state.saved_acq_params, st.session_state.trial_order
-        )
+    arduino_session = ArduinoSession(
+        st.session_state.saved_acq_params, st.session_state.trial_order
+    )
 
-        arduino_session.save_solenoid_order_csv()
+    arduino_session.save_solenoid_order_csv()
 
-        if arduino_session.trig_signal is False:
-            while (
-                arduino_session.trig_signal is False
-                and arduino_session.sequence_complete is False
-            ):
-                # Check whether arduino is connected
-                # new_arduino_message = arduino_session.get_arduino_msg()
-                new_arduino_message = get_arduino_msg(arduino)
-                if "y" in new_arduino_message:
-                    print("Arduino is connected")
-                    arduino_session.trig_signal = True
+    if arduino_session.trig_signal is False:
+        while (
+            arduino_session.trig_signal is False
+            and arduino_session.sequence_complete is False
+        ):
+            # Check whether arduino is connected
+            # new_arduino_message = arduino_session.get_arduino_msg()
+            new_arduino_message = get_arduino_msg(arduino)
+            if "y" in new_arduino_message:
+                print("Arduino is connected")
+                arduino_session.trig_signal = True
 
-                    arduino_session.generate_arduino_str(arduino)
+                arduino_session.generate_arduino_str(arduino)
 
-                    arduino_session.save_solenoid_timing_csv()
+                arduino_session.save_solenoid_timing_csv()
 
-                    arduino_session.trig_signal = False
+                arduino_session.trig_signal = False
 
-                else:
-                    pass
+            else:
+                pass
     if (
         arduino_session.trig_signal is False
         and arduino_session.sequence_complete is True
