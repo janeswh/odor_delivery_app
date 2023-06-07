@@ -1,5 +1,4 @@
 from kivymd.app import MDApp
-from kivy.lang import Builder
 
 # from kivymd.uix.label import MDLabel
 
@@ -12,8 +11,6 @@ from kivy.lang import Builder
 # from kivymd.uix.button import MDFillRoundFlatButton
 from kivymd.uix.widget import Widget
 from kivy.properties import ObjectProperty
-from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.screen import MDScreen
 
 
 class SettingsScreen(Widget):
@@ -22,17 +19,11 @@ class SettingsScreen(Widget):
     num_odors = ObjectProperty(None)
     num_trials = ObjectProperty(None)
 
+    # def spinner_clicked(self, value):
+    #     self.ids.click_label.text = f'# of Odors: {value}'
+
 
 class MainApp(MDApp):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        num_odors_list = list(range(1, 9))
-        self.menu = MDDropdownMenu(
-            caller=MDScreen.ids.field,
-            items=num_odors_list,
-            position="bottom",
-        )
-
     def build(self):
         # return MDLabel(text="Hello, World", halign="center")
         return SettingsScreen()
