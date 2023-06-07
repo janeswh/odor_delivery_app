@@ -170,6 +170,9 @@ def save_trial_order(trials):
     st.session_state.trial_order = trials
     st.session_state.trial_order_saved = True
 
+    show_exp_summary()
+    get_trial_order()
+
     start_experiment()
     # st.experimental_rerun()
 
@@ -415,10 +418,11 @@ def start_experiment():
     has input.
     """
     st.session_state.experiment_started = True
+    initialize_arduino()
 
     # Initialize Arduino
-    if st.session_state.arduino_initialized == False:
-        initialize_arduino()
+    # if st.session_state.arduino_initialized == False:
+    #     initialize_arduino()
     if st.session_state.arduino_initialized == True:
         st.info(
             "Arduino initialized and on stand-by. "
@@ -456,15 +460,15 @@ def start_experiment():
     ):
         # st.info("Experiment finished.")
         close_arduino()
-        arduino_session.sequence_complete = False
-
-        for key in st.session_state.keys():
-            del st.session_state[key]
 
         # pdb.set_trace()
 
         start_new_experiment = st.button("Start new experiment")
         if start_new_experiment:
+            for key in st.session_state.keys():
+                del st.session_state[key]
+            arduino_session.sequence_complete = False
+
             st.experimental_rerun()
 
 
@@ -706,45 +710,49 @@ class ArduinoSession:
         y = odor duration (s)
         z = time between odors (s)
         """
-
-        # Adds progress bar
-        bar = stqdm(range(len(self.solenoid_order)), desc=f"Executing Trial")
-
-        # Creates plateholder container for arduino progress msgs
-        arduino_output_placeholder = st.empty()
-
-        # for solenoid in self.solenoid_order:
-        for trial in bar:
-            bar.set_description(f"Executing Trial {trial+1}", refresh=True)
-            to_be_sent = (
-                # f"{solenoid},{self.acq_params.odor_duration},"
-                f"{self.solenoid_order[trial]},{self.acq_params.odor_duration},"
-                f"{self.acq_params.time_btw_odors}"
+        if self.trig_signal == True:
+            # Adds progress bar
+            bar = stqdm(
+                range(len(self.solenoid_order)), desc=f"Executing Trial"
             )
-            # to_be_sent = "5"
 
-            self.sent = 1
-            # time.sleep(2)  # Two seconds for arduino to reset
+            # Creates plateholder container for arduino progress msgs
+            arduino_output_placeholder = st.empty()
 
-            # Send the information to arduino and wait for something to come back
-            st.session_state.arduino.write(to_be_sent.encode())
-
-            while self.sent == 1:
-                self.parse_arduino_msg(
-                    trial,
-                    self.solenoid_order[trial],
-                    arduino_output_placeholder,
+            # for solenoid in self.solenoid_order:
+            for trial in bar:
+                bar.set_description(f"Executing Trial {trial+1}", refresh=True)
+                to_be_sent = (
+                    # f"{solenoid},{self.acq_params.odor_duration},"
+                    f"{self.solenoid_order[trial]},{self.acq_params.odor_duration},"
+                    f"{self.acq_params.time_btw_odors}"
                 )
+                # to_be_sent = "5"
 
-                # # Mark end after last trial
-                # if trial + 1 == len(bar):
+                self.sent = 1
+                # time.sleep(2)  # Two seconds for arduino to reset
 
-        self.sequence_complete = True
-        self.trig_signal = False
+                # Send the information to arduino and wait for something to come back
+                st.session_state.arduino.write(to_be_sent.encode())
 
-        arduino_output_placeholder.info("Odor delivery sequence complete.")
+                while self.sent == 1:
+                    self.parse_arduino_msg(
+                        trial,
+                        self.solenoid_order[trial],
+                        arduino_output_placeholder,
+                    )
 
-        st.info("Experiment finished.")
+                    # # Mark end after last trial
+                    # if trial + 1 == len(bar):
+
+            self.sequence_complete = True
+            self.trig_signal = False
+
+            arduino_output_placeholder.info("Odor delivery sequence complete.")
+
+            st.info("Experiment finished.")
+        else:
+            st.info("Already finished.")
 
     def save_solenoid_order_csv(self):
         """
