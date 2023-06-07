@@ -82,13 +82,26 @@ def initialize_arduino():
     st.session_state.arduino_initialized = True
     st.session_state.arduino = arduino
 
+    return arduino
 
-def close_arduino():
+
+def close_arduino(arduino):
     """
     Closes the arduino connection
     """
-    st.session_state.arduino.close()
+    arduino.close()
     st.session_state.arduino_initialized = False
+
+
+def get_arduino_msg(arduino):
+    """
+    Gets message back from arduino after sending it str
+    """
+
+    sent_info = arduino.readline().strip()
+    decode_info = sent_info.decode("utf-8")
+
+    return decode_info
 
 
 def make_pick_folder_button():
@@ -418,7 +431,7 @@ def start_experiment():
     has input.
     """
     st.session_state.experiment_started = True
-    initialize_arduino()
+    arduino = initialize_arduino()
 
     # Initialize Arduino
     # if st.session_state.arduino_initialized == False:
@@ -441,12 +454,13 @@ def start_experiment():
                 and arduino_session.sequence_complete is False
             ):
                 # Check whether arduino is connected
-                new_arduino_message = arduino_session.get_arduino_msg()
+                # new_arduino_message = arduino_session.get_arduino_msg()
+                new_arduino_message = get_arduino_msg(arduino)
                 if "y" in new_arduino_message:
                     print("Arduino is connected")
                     arduino_session.trig_signal = True
 
-                    arduino_session.generate_arduino_str()
+                    arduino_session.generate_arduino_str(arduino)
 
                     arduino_session.save_solenoid_timing_csv()
 
@@ -459,7 +473,7 @@ def start_experiment():
         and arduino_session.sequence_complete is True
     ):
         # st.info("Experiment finished.")
-        close_arduino()
+        close_arduino(arduino)
 
         # pdb.set_trace()
 
@@ -468,6 +482,7 @@ def start_experiment():
             for key in st.session_state.keys():
                 del st.session_state[key]
             arduino_session.sequence_complete = False
+            st.session_state.experiment_started == False
 
             st.experimental_rerun()
 
@@ -610,12 +625,13 @@ class ArduinoSession:
 
         return decode_info
 
-    def parse_arduino_msg(self, trial, solenoid, placeholder):
+    def parse_arduino_msg(self, arduino, trial, solenoid, placeholder):
         """
         Translates the message sent back from arduino into informative
         timestamps. Prints the info into placeholder textbox
         """
-        arduino_msg_received = self.get_arduino_msg()
+        # arduino_msg_received = self.get_arduino_msg()
+        arduino_msg_received = get_arduino_msg(arduino)
 
         if (
             arduino_msg_received is None or "y" in arduino_msg_received
@@ -703,7 +719,7 @@ class ArduinoSession:
 
                 # time.sleep(2)
 
-    def generate_arduino_str(self):
+    def generate_arduino_str(self, arduino):
         """
         Generates arduino execution strs in format "x, y, z" where
         x = solenoid number
@@ -733,10 +749,12 @@ class ArduinoSession:
                 # time.sleep(2)  # Two seconds for arduino to reset
 
                 # Send the information to arduino and wait for something to come back
-                st.session_state.arduino.write(to_be_sent.encode())
+                # st.session_state.arduino.write(to_be_sent.encode())
+                arduino.write(to_be_sent.encode())
 
                 while self.sent == 1:
                     self.parse_arduino_msg(
+                        arduino,
                         trial,
                         self.solenoid_order[trial],
                         arduino_output_placeholder,
