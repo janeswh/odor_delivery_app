@@ -1,0 +1,74 @@
+#:kivy 2.2
+<MDLabel>:
+    # font_size: 24
+    #size_hint: (0.1, 0.05)
+    size_hint_y: 0.05
+
+MDScreen:
+    MDTextField:
+        id: field
+        pos_hint: {'center_x': .5, 'center_y': .6}
+        size_hint_x: None
+        width: "200dp"
+        hint_text: "# of Odors"
+        on_focus: if self.focus: app.menu.open()
+
+<SettingsScreen>
+    animal_id: animal_id
+    roi: roi
+    num_odors: num_odors
+    num_trials: num_trials
+
+    MDFloatLayout:
+        # anchor_x: "center"
+        # anchor_y: "top"
+        # # size_hint: (0.5, 0.5)
+        size: root.width, root.height
+
+        MDGridLayout:
+            pos_hint: {'x':0.05, 'y':0.1}
+            size_hint: (0.8, 0.8)
+            cols:1         
+
+
+            MDGridLayout:
+                # rows:4
+                cols:1
+
+
+                MDLabel:
+                    text: "Animal ID"
+                MDTextField:
+                    id: animal_id
+                    hint_text: "123456-1-2"
+                    required: True
+
+                MDLabel:
+                    id: roi
+                    text: "ROI"
+                MDTextField:
+                    required: True
+
+                MDLabel:
+                    id: num_odors
+                    text: "# of Odors"
+                MDTextField:
+                    required: True
+                    input_filter: "int"
+                MDDropDownMenu
+
+
+                MDLabel:
+                    id: num_trials
+                    text: "# of Trials/Odor"
+                MDTextField:
+                    required: True
+                    input_filter: "int"
+
+
+
+            MDFillRoundFlatButton:
+                text: "Save"
+
+                
+
