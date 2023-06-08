@@ -287,25 +287,25 @@ class DeliveryApp:
             ]
         )
 
-        # settings_r4 = ft.ResponsiveRow(
-        #     [self.randomize_option, self.save_settings_btn]
-        # )
-
         settings_r4 = ft.ResponsiveRow(
-            [
-                self.randomize_option,
-                SaveSettingsButton(
-                    self.directory_path,
-                    self.animal_id.value,
-                    self.roi.value,
-                    self.num_odors.value,
-                    self.num_trials.value,
-                    self.odor_duration.value,
-                    self.time_btw_odors.value,
-                    self.randomize_option.value,
-                ),
-            ]
+            [self.randomize_option, self.save_settings_btn]
         )
+
+        # settings_r4 = ft.ResponsiveRow(
+        #     [
+        #         self.randomize_option,
+        #         SaveSettingsButton(
+        #             self.directory_path,
+        #             self.animal_id.value,
+        #             self.roi.value,
+        #             self.num_odors.value,
+        #             self.num_trials.value,
+        #             self.odor_duration.value,
+        #             self.time_btw_odors.value,
+        #             self.randomize_option.value,
+        #         ),
+        #     ]
+        # )
 
         return settings_r1, settings_r2, settings_r3, settings_r4
 
@@ -316,15 +316,20 @@ class DeliveryApp:
         trials_df = make_trials_df(trials).T
         trial_heading = ft.Markdown("**Odor order by trial:**")
 
-        # trials_table = ft.DataTable()
-        for trials_num in range(len(trials_df.columns)):
-            self.raw_trials_table.columns.append(
-                ft.DataColumn(ft.Text(trials_df.columns[trials_num]))
-            )
-        self.raw_trials_table.rows.append(
-            ft.DataRow(cells=trials_df.loc["Odor #"].tolist())
-        )
-        self.trials_table[0] = self.raw_trials_table
+        table = ExperimentDisplay("table", trials_df)
+        pdb.set_trace()
+
+        self.main_layout.controls.append(table)
+
+        # # trials_table = ft.DataTable()
+        # for trials_num in range(len(trials_df.columns)):
+        #     self.raw_trials_table.columns.append(
+        #         ft.DataColumn(ft.Text(trials_df.columns[trials_num]))
+        #     )
+        # self.raw_trials_table.rows.append(
+        #     ft.DataRow(cells=trials_df.loc["Odor #"].tolist())
+        # )
+        # self.trials_table[0] = self.raw_trials_table
 
         # self.view2 = ft.Column(
         #     width=600,
@@ -347,7 +352,25 @@ class DeliveryApp:
         self.trials_table = [self.raw_trials_table]
         self.trials_table_row = ft.Container(ft.Row(self.trials_table))
 
-        self.view = ft.Column(
+        # self.view = ft.Column(
+        #     width=600,
+        #     controls=[
+        #         page_title,
+        #         directory_prompt,
+        #         row1,
+        #         row2,
+        #         row3,
+        #         row4,
+        #         self.trials_table_row,
+        #     ],
+        # )
+
+        self.page.horizontal_alignment = ft.CrossAxisAlignment.START
+        self.page.window_width = 700
+        self.page.window_height = 600
+        # page.window_resizable = False
+
+        self.main_layout = ft.Column(
             width=600,
             controls=[
                 page_title,
@@ -360,140 +383,159 @@ class DeliveryApp:
             ],
         )
 
-        self.page.horizontal_alignment = ft.CrossAxisAlignment.START
-        self.page.window_width = 700
-        self.page.window_height = 600
-        # page.window_resizable = False
+        self.page.add(self.main_layout)
 
-        self.page.add(self.view)
+        # self.page.add(self.view)
 
 
-# Experiment settings input fields
-class ExperimentSettings(ft.UserControl):
-    def build(self):
-        return ft.Column()
-
-    # Creates setting input fields
-    def create_settings_fields(self):
-        self.animal_id = ft.TextField(
-            value="",
-            label="Animal ID",
-            hint_text="e.g. 123456-1-2",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.roi = ft.TextField(
-            value="",
-            label="ROI #",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-
-        self.num_odors = ft.Dropdown(
-            value="",
-            label="# of odors",
-            width=100,
-            options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
-            alignment=ft.alignment.center,
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-
-        self.num_trials = ft.TextField(
-            value="",
-            label="# Trials/odor",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.odor_duration = ft.TextField(
-            value=1,
-            label="Odor duration (s)",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.time_btw_odors = ft.TextField(
-            value=10,
-            label="Time between odors (s)",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-
-
-# Save settings button
-class SaveSettingsButton(ft.UserControl):
-    def __init__(
-        self,
-        directory_path,
-        animal_id,
-        roi,
-        num_odors,
-        num_trials,
-        odor_duration,
-        time_btw_odors,
-        randomize_option,
-    ):
+# Empty container for displaying experimental settings
+class ExperimentDisplay(ft.UserControl):
+    def __init__(self, data_type, data):
         super().__init__()
-
-        self.directory_path = directory_path
-        self.animal_id = animal_id
-        self.roi = roi
-        self.num_odors = num_odors
-        self.num_trials = num_trials
-        self.odor_duration = odor_duration
-        self.time_btw_odors = time_btw_odors
-        self.randomize_option = randomize_option
-
-    def print_trial_order(self, trials):
-        """
-        Prints a table listing the trial number and odor used for each trial
-        """
-        trials_df = make_trials_df(trials).T
-        trial_heading = ft.Markdown("**Odor order by trial:**")
-
-        # trials_table = ft.DataTable()
-        for trials_num in range(len(trials_df.columns)):
-            self.raw_trials_table.columns.append(
-                ft.DataColumn(ft.Text(trials_df.columns[trials_num]))
-            )
-        self.raw_trials_table.rows.append(
-            ft.DataRow(cells=trials_df.loc["Odor #"].tolist())
-        )
-        self.trials_table[0] = self.raw_trials_table
-
-    def clicked(self, e):
-        now_date = datetime.datetime.now()
-        settings_dict = {
-            "dir_path": self.directory_path,
-            "mouse": self.animal_id,
-            "roi": self.roi,
-            "date": now_date.strftime("%y%m%d"),
-            "num_odors": self.num_odors,
-            "num_trials": self.num_trials,
-            "odor_duration": self.odor_duration,
-            "time_btw_odors": self.time_btw_odors,
-            "randomize_trials": self.randomize_option,
-        }
-
-        if self.randomize_option is True:
-            randomized_trials = randomize_trials(
-                self.num_odors, self.num_trials
-            )
-
-            self.print_trial_order(randomized_trials)
+        self.data_type = data_type
+        self.data = data
 
     def build(self):
-        self.raw_trials_table = ft.DataTable()
+        if self.data_type == "table":
+            table = ft.DataTable()
 
-        button = ElevatedButton(
-            "Save Settings",
-            icon=icons.SAVE_ALT_ROUNDED,
-            on_click=self.clicked,
-            col={"sm": 4},
-            disabled=False,
-        )
-        # self.update()
+            for trials_num in range(len(self.data.columns)):
+                table.columns.append(
+                    ft.DataColumn(ft.Text(self.data.columns[trials_num]))
+                )
+            table.rows.append(
+                ft.DataRow(cells=self.data.loc["Odor #"].tolist())
+            )
 
-        return ft.Row([button, self.raw_trials_table])
+        return table
+
+
+# # Experiment settings input fields
+# class ExperimentSettings(ft.UserControl):
+#     def build(self):
+#         return ft.Column()
+
+#     # Creates setting input fields
+#     def create_settings_fields(self):
+#         self.animal_id = ft.TextField(
+#             value="",
+#             label="Animal ID",
+#             hint_text="e.g. 123456-1-2",
+#             col={"sm": 4},
+#             on_change=self.check_settings_complete,
+#         )
+#         self.roi = ft.TextField(
+#             value="",
+#             label="ROI #",
+#             col={"sm": 4},
+#             on_change=self.check_settings_complete,
+#         )
+
+#         self.num_odors = ft.Dropdown(
+#             value="",
+#             label="# of odors",
+#             width=100,
+#             options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
+#             alignment=ft.alignment.center,
+#             col={"sm": 4},
+#             on_change=self.check_settings_complete,
+#         )
+
+#         self.num_trials = ft.TextField(
+#             value="",
+#             label="# Trials/odor",
+#             col={"sm": 4},
+#             on_change=self.check_settings_complete,
+#         )
+#         self.odor_duration = ft.TextField(
+#             value=1,
+#             label="Odor duration (s)",
+#             col={"sm": 4},
+#             on_change=self.check_settings_complete,
+#         )
+#         self.time_btw_odors = ft.TextField(
+#             value=10,
+#             label="Time between odors (s)",
+#             col={"sm": 4},
+#             on_change=self.check_settings_complete,
+#         )
+
+
+# # Save settings button
+# class SaveSettingsButton(ft.UserControl):
+#     def __init__(
+#         self,
+#         directory_path,
+#         animal_id,
+#         roi,
+#         num_odors,
+#         num_trials,
+#         odor_duration,
+#         time_btw_odors,
+#         randomize_option,
+#     ):
+#         super().__init__()
+
+#         self.directory_path = directory_path
+#         self.animal_id = animal_id
+#         self.roi = roi
+#         self.num_odors = num_odors
+#         self.num_trials = num_trials
+#         self.odor_duration = odor_duration
+#         self.time_btw_odors = time_btw_odors
+#         self.randomize_option = randomize_option
+
+#     def print_trial_order(self, trials):
+#         """
+#         Prints a table listing the trial number and odor used for each trial
+#         """
+#         trials_df = make_trials_df(trials).T
+#         trial_heading = ft.Markdown("**Odor order by trial:**")
+
+#         # trials_table = ft.DataTable()
+#         for trials_num in range(len(trials_df.columns)):
+#             self.raw_trials_table.columns.append(
+#                 ft.DataColumn(ft.Text(trials_df.columns[trials_num]))
+#             )
+#         self.raw_trials_table.rows.append(
+#             ft.DataRow(cells=trials_df.loc["Odor #"].tolist())
+#         )
+#         self.trials_table[0] = self.raw_trials_table
+
+#     def clicked(self, e):
+#         now_date = datetime.datetime.now()
+#         settings_dict = {
+#             "dir_path": self.directory_path,
+#             "mouse": self.animal_id,
+#             "roi": self.roi,
+#             "date": now_date.strftime("%y%m%d"),
+#             "num_odors": self.num_odors,
+#             "num_trials": self.num_trials,
+#             "odor_duration": self.odor_duration,
+#             "time_btw_odors": self.time_btw_odors,
+#             "randomize_trials": self.randomize_option,
+#         }
+
+#         if self.randomize_option is True:
+#             randomized_trials = randomize_trials(
+#                 self.num_odors, self.num_trials
+#             )
+
+#             self.print_trial_order(randomized_trials)
+
+#     def build(self):
+#         self.raw_trials_table = ft.DataTable()
+
+#         button = ElevatedButton(
+#             "Save Settings",
+#             icon=icons.SAVE_ALT_ROUNDED,
+#             on_click=self.clicked,
+#             col={"sm": 4},
+#             disabled=False,
+#         )
+#         # self.update()
+
+#         return ft.Row([button, self.raw_trials_table])
 
 
 if __name__ == "__main__":

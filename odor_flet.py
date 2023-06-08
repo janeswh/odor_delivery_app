@@ -197,51 +197,6 @@ class DeliveryApp:
         self.directory_path.update()
         self.check_settings_complete(e)
 
-    # Creates setting input fields
-    def create_settings_fields(self):
-        self.animal_id = ft.TextField(
-            value="",
-            label="Animal ID",
-            hint_text="e.g. 123456-1-2",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.roi = ft.TextField(
-            value="",
-            label="ROI #",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-
-        self.num_odors = ft.Dropdown(
-            value="",
-            label="# of odors",
-            width=100,
-            options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
-            alignment=ft.alignment.center,
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-
-        self.num_trials = ft.TextField(
-            value="",
-            label="# Trials/odor",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.odor_duration = ft.TextField(
-            value=1,
-            label="Odor duration (s)",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.time_btw_odors = ft.TextField(
-            value=10,
-            label="Time between odors (s)",
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-
     def create_buttons(self):
         self.pick_directory_btn = ElevatedButton(
             "Open directory",
@@ -417,6 +372,75 @@ class ExperimentSettings(ft.UserControl):
             col={"sm": 4},
             on_change=self.check_settings_complete,
         )
+
+    # Arranges setting fields in rows
+    def arrange_settings_fields(self):
+        settings_r1 = ft.ResponsiveRow(
+            [
+                self.pick_directory_btn,
+                self.directory_path,
+            ]
+        )
+        settings_r2 = ft.ResponsiveRow(
+            [
+                self.animal_id,
+                self.roi,
+                self.num_odors,
+            ],
+        )
+
+        settings_r3 = ft.ResponsiveRow(
+            [
+                self.odor_duration,
+                self.time_btw_odors,
+                self.num_trials,
+            ]
+        )
+
+        # settings_r4 = ft.ResponsiveRow(
+        #     [self.randomize_option, self.save_settings_btn]
+        # )
+
+        settings_r4 = ft.ResponsiveRow(
+            [
+                self.randomize_option,
+                SaveSettingsButton(
+                    self.directory_path,
+                    self.animal_id.value,
+                    self.roi.value,
+                    self.num_odors.value,
+                    self.num_trials.value,
+                    self.odor_duration.value,
+                    self.time_btw_odors.value,
+                    self.randomize_option.value,
+                ),
+            ]
+        )
+
+        return settings_r1, settings_r2, settings_r3, settings_r4
+
+    def check_settings_complete(self, e):
+        if (
+            ""
+            in [
+                self.directory_path.value,
+                self.animal_id.value,
+                self.roi.value,
+                self.num_odors.value,
+                self.num_trials.value,
+                self.odor_duration.value,
+                self.time_btw_odors.value,
+                self.randomize_option.value,
+            ]
+            or self.num_odors.value is None
+            or self.directory_path.value is None
+        ):
+            self.save_settings_btn.disabled = True
+
+        else:
+            self.save_settings_btn.disabled = False
+
+        self.page.update()
 
 
 # Save settings button
