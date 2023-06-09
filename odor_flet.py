@@ -67,7 +67,7 @@ class OdorDeliveryApp:
 
         self.create_settings_fields()
         row1, row2, row3, row4 = self.arrange_settings_fields()
-        self.create_main_layout(row1, row2, row3, row4)
+        self.create_settings_layout(row1, row2, row3, row4)
         self.page.update()
 
     def create_settings_fields(self):
@@ -105,19 +105,6 @@ class OdorDeliveryApp:
         )
 
         self.create_buttons()
-
-        # self.main_layout.controls = [
-        #     self.animal_id,
-        #     self.roi,
-        #     self.num_odors,
-        #     self.num_trials,
-        #     self.odor_duration,
-        #     self.time_btw_odors,
-        #     self.pick_directory_btn,
-        #     self.randomize_option,
-        #     self.save_settings_btn,
-        #     self.directory_path,
-        # ]
 
     # Arranges setting fields in rows
     def arrange_settings_fields(self):
@@ -171,7 +158,7 @@ class OdorDeliveryApp:
             disabled=True,
         )
 
-    def create_main_layout(self, row1, row2, row3, row4):
+    def create_settings_layout(self, row1, row2, row3, row4):
         page_title = Text(
             "Delivery Settings", style=ft.TextThemeStyle.DISPLAY_MEDIUM
         )
@@ -184,25 +171,12 @@ class OdorDeliveryApp:
         # self.trials_table = [self.raw_trials_table]
         # self.trials_table_row = ft.Container(ft.Row(self.trials_table))
 
-        # self.view = ft.Column(
-        #     width=600,
-        #     controls=[
-        #         page_title,
-        #         directory_prompt,
-        #         row1,
-        #         row2,
-        #         row3,
-        #         row4,
-        #         self.trials_table_row,
-        #     ],
-        # )
-
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
-        self.page.window_width = 700
+        self.page.window_width = 600
         self.page.window_height = 600
         # page.window_resizable = False
 
-        self.main_layout = ft.Column(
+        self.settings_layout = ft.Column(
             width=600,
             controls=[
                 page_title,
