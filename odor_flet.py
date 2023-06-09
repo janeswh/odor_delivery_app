@@ -54,11 +54,9 @@ class SettingsFields(UserControl):
         return self.text_field
 
 
-class OdorDeliveryApp:
+class SettingsLayout:
     def __init__(self, page: Page):
         self.page = page
-        self.page.title = "Odor Delivery App"
-
         self.get_directory_dialog = FilePicker(
             on_result=self.get_directory_result
         )
@@ -66,11 +64,18 @@ class OdorDeliveryApp:
         page.overlay.append(self.get_directory_dialog)
 
         self.create_settings_fields()
-        row1, row2, row3, row4 = self.arrange_settings_fields()
-        self.create_settings_layout(row1, row2, row3, row4)
+        (
+            self.row1,
+            self.row2,
+            self.row3,
+            self.row4,
+        ) = self.arrange_settings_fields()
+        self.create_settings_layout()
         self.page.update()
 
     def create_settings_fields(self):
+        self.main_layout = Column()
+
         # self.textfield1_ref = Ref[SettingsFields]()
         self.animal_id = SettingsFields(
             # ref=self.textfield1_ref,
@@ -156,7 +161,7 @@ class OdorDeliveryApp:
             disabled=True,
         )
 
-    def create_settings_layout(self, row1, row2, row3, row4):
+    def create_settings_layout(self):
         page_title = Text(
             "Delivery Settings", style=ft.TextThemeStyle.DISPLAY_MEDIUM
         )
@@ -179,15 +184,15 @@ class OdorDeliveryApp:
             controls=[
                 page_title,
                 directory_prompt,
-                row1,
-                row2,
-                row3,
-                row4,
+                self.row1,
+                self.row2,
+                self.row3,
+                self.row4,
                 # self.trials_table_row,
             ],
         )
 
-        self.page.add(self.settings_layout)
+        self.page.add(self.main_layout)
 
     # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
@@ -217,6 +222,22 @@ class OdorDeliveryApp:
             self.save_settings_btn.disabled = False
 
         self.page.update()
+
+    def make_layout(self):
+        return self.settings_layout
+
+
+class OdorDeliveryApp:
+    def __init__(self, page: Page):
+        self.page = page
+        self.page.title = "Odor Delivery App"
+
+        settings_layout = SettingsLayout(page).make_layout()
+        self.page.add(settings_layout)
+        self.page.add(Text("hello"))
+
+        self.page.update()
+        # pdb.set_trace()
 
 
 if __name__ == "__main__":
