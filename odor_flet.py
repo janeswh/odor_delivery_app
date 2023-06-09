@@ -71,8 +71,6 @@ class OdorDeliveryApp:
         self.page.update()
 
     def create_settings_fields(self):
-        self.main_layout = Column()
-
         # self.textfield1_ref = Ref[SettingsFields]()
         self.animal_id = SettingsFields(
             # ref=self.textfield1_ref,
@@ -189,7 +187,7 @@ class OdorDeliveryApp:
             ],
         )
 
-        self.page.add(self.main_layout)
+        self.page.add(self.settings_layout)
 
     # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
