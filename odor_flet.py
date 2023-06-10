@@ -344,6 +344,12 @@ class SettingsLayout:
         return self.settings_layout
 
 
+class TrialOrderTable(UserControl):
+    def __init__(self, page, randomize, num_trials, num_odors, reset):
+        super().__init__()
+        self.page = page
+
+
 class ExperimentInfoLayout(UserControl):
     def __init__(self, page, randomize, num_trials, num_odors, reset):
         super().__init__()
@@ -361,14 +367,32 @@ class ExperimentInfoLayout(UserControl):
                 self.make_trials_df()
                 self.display_trial_order()
 
+    def create_trials_table(self, e=None):
+        self.randomize_trials()
+        self.make_trials_df()
+        self.display_trial_order()
+        print("randomize button pressed")
+
+        # # Delete old table and replace with new
+        # pdb.set_trace()
+        # if self.info_layout is not None:
+        #     self.page.controls.remove(self.info_layout)
+
+        self.info_layout = Container(content=self.exp_display_content)
+        # self.page.add(self.info_layout)
+        self.update()
+        self.page.update()
+
     def make_randomize_button(self):
         self.randomize_button = ElevatedButton(
-            "Randomize again", on_click=self.randomize_trials()
+            "Randomize again", on_click=self.create_trials_table
         )
 
     def randomize_trials(self):
         self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
         random.shuffle(self.trials)
+        self.update()
+        print("randomize happening")
 
     def make_trials_df(self):
         """
@@ -380,9 +404,6 @@ class ExperimentInfoLayout(UserControl):
         self.trials_df = self.trials_df.T
 
     def display_trial_order(self):
-        self.raw_trials_table = ft.DataTable()
-        self.trials_table = [self.raw_trials_table]
-
         # pdb.set_trace()
         # Using simpledt package fixes the page.add(DataTable) issue
         # https://github.com/StanMathers/simple-datatable
@@ -411,13 +432,13 @@ class ExperimentInfoLayout(UserControl):
         #     color=ft.colors.OUTLINE_VARIANT
         # )
 
-        self.exp_display_content = Row(
-            controls=[self.simple_dt], scroll="auto"
+        self.make_randomize_button()
+
+        self.exp_display_content = Column(
+            controls=[self.simple_dt, self.randomize_button], scroll="auto"
         )
 
         self.update()
-
-        print("table made")
 
     def post_save(self):
         self.exp_display_content = Text("Saved")
