@@ -14,6 +14,7 @@ from flet import (
     icons,
 )
 
+from simpledt import DataFrame
 import pandas as pd
 import datetime
 import random
@@ -293,8 +294,8 @@ class SettingsLayout:
             self.num_odors.value,
             reset=False,
         )
+
         self.page.add(self.experiment_info_layout)
-        # self.page.add(ExperimentInfoLayout(self.page, self.randomize_option))
 
         self.page.update()
 
@@ -346,7 +347,7 @@ class ExperimentInfoLayout(UserControl):
         self.page = page
         self.randomize = randomize
 
-        self.exp_display_text = "Initial save"
+        self.exp_display_content = Text("Initial save")
 
         if reset is False:
             self.num_trials = int(num_trials)
@@ -365,41 +366,63 @@ class ExperimentInfoLayout(UserControl):
         """
         Puts odor trials into a df
         """
-        trial_labels = list(range(1, len(self.trials) + 1))
-        self.trials_df = pd.DataFrame(
-            {"Trial": trial_labels, "Odor #": self.trials}
-        )
+
+        self.trials_df = pd.DataFrame(self.trials)
+        self.trials_df.rename(index=lambda s: s + 1, inplace=True)
+        self.trials_df = self.trials_df.T
 
     def display_trial_order(self):
         self.raw_trials_table = ft.DataTable()
         self.trials_table = [self.raw_trials_table]
-        self.trials_df = self.trials_df.T
 
-        for trials_num in range(len(self.trials_df.columns)):
-            self.raw_trials_table.columns.append(
-                ft.DataColumn(ft.Text(self.trials_df.columns[trials_num]))
-            )
-        self.raw_trials_table.rows.append(
-            ft.DataRow(cells=self.trials_df.loc["Odor #"].tolist())
+        # pdb.set_trace()
+        # Using simpledt package fixes the page.add(DataTable) issue
+        # https://github.com/StanMathers/simple-datatable
+
+        simplet_df = DataFrame(self.trials_df)
+        self.simple_dt = simplet_df.datatable
+
+        # Add Trial/Odor labels to table
+        self.simple_dt.columns.insert(0, ft.DataColumn(ft.Text("Trial")))
+        self.simple_dt.rows[0].cells.insert(
+            0, ft.DataCell(content=Text("Odor"))
         )
-        self.trials_table[0] = self.raw_trials_table
+
+        self.simple_dt.column_spacing = 20
+        self.simple_dt.heading_row_height = 25
+        self.simple_dt.data_row_height = 40
+        self.simple_dt.horizontal_lines = ft.border.BorderSide(
+            2, ft.colors.SECONDARY_CONTAINER
+        )
+        self.simple_dt.vertical_lines = ft.border.BorderSide(
+            1, ft.colors.ON_SECONDARY
+        )
+
+        self.simple_dt.heading_row_color = ft.colors.SECONDARY_CONTAINER
+        # self.simple_dt.heading_text_style = ft.TextStyle(
+        #     color=ft.colors.OUTLINE_VARIANT
+        # )
+
+        self.exp_display_content = Row(
+            controls=[self.simple_dt], scroll="auto"
+        )
+
+        self.update()
 
         print("table made")
 
     def post_save(self):
-        self.exp_display_text = "Saved"
+        self.exp_display_content = Text("Saved")
         self.update()
 
     def unsaved(self):
-        self.exp_display_text = "Settings not saved"
+        self.exp_display_content = Text("Settings not saved")
         print("settings not saved should be triggered")
 
         self.update()
 
     def build(self):
-        # self.info_layout = Column(controls=[Text(self.exp_display_text)])
-        self.info_layout = Text(self.exp_display_text)
-        # self.info_layout = self.raw_trials_table
+        self.info_layout = Container(content=self.exp_display_content)
 
         return self.info_layout
 
