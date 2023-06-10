@@ -300,6 +300,7 @@ class SettingsLayout:
         self.page.update()
 
     def reset_settings_clicked(self, e):
+        self.directory_path.value = None
         self.settings_dict = None
         self.animal_id.reset()
         self.roi.reset()
@@ -320,6 +321,8 @@ class SettingsLayout:
 
         # Need to make a new ExperimentInfoLayout to replace old one, not sure
         # why updating old instance with unsaved() doesn't work
+
+        self.check_settings_complete(e)
 
         if self.experiment_info_layout is not None:
             self.page.controls.remove(self.experiment_info_layout)
@@ -357,6 +360,11 @@ class ExperimentInfoLayout(UserControl):
                 self.randomize_trials()
                 self.make_trials_df()
                 self.display_trial_order()
+
+    def make_randomize_button(self):
+        self.randomize_button = ElevatedButton(
+            "Randomize again", on_click=self.randomize_trials()
+        )
 
     def randomize_trials(self):
         self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
@@ -416,7 +424,8 @@ class ExperimentInfoLayout(UserControl):
         self.update()
 
     def unsaved(self):
-        self.exp_display_content = Text("Settings not saved")
+        # self.exp_display_content = Text("Settings not saved")
+        self.exp_display_content = None
         print("settings not saved should be triggered")
 
         self.update()
