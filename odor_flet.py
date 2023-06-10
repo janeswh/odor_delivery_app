@@ -98,6 +98,7 @@ class SettingsLayout:
         self.page = page
         self.settings_dict = None
         self.saved_click = False
+        self.experiment_info_layout = None
 
         self.get_directory_dialog = FilePicker(
             on_result=self.get_directory_result
@@ -281,6 +282,10 @@ class SettingsLayout:
             "randomize_trials": self.randomize_option,
         }
         self.save_settings_btn.disabled = True
+
+        if self.experiment_info_layout is not None:
+            self.page.controls.remove(self.experiment_info_layout)
+
         self.experiment_info_layout = ExperimentInfoLayout(
             self.page,
             self.randomize_option,
@@ -303,17 +308,21 @@ class SettingsLayout:
         self.time_btw_odors.reset()
         self.randomize_option.value = True
 
-        # finds matching type of controls currently on the page and replaces
-        # with new ExperimentInfoLayout
-        controls_type = [type(control) for control in self.page.controls]
-        control_i = [
-            i
-            for i, control in enumerate(controls_type)
-            if issubclass(controls_type[i], ExperimentInfoLayout)
-        ]
+        # # finds matching type of controls currently on the page and replaces
+        # # with new ExperimentInfoLayout
+        # controls_type = [type(control) for control in self.page.controls]
+        # control_i = [
+        #     i
+        #     for i, control in enumerate(controls_type)
+        #     if issubclass(controls_type[i], ExperimentInfoLayout)
+        # ]
 
         # Need to make a new ExperimentInfoLayout to replace old one, not sure
         # why updating old instance with unsaved() doesn't work
+
+        if self.experiment_info_layout is not None:
+            self.page.controls.remove(self.experiment_info_layout)
+
         self.experiment_info_layout = ExperimentInfoLayout(
             self.page,
             self.randomize_option,
@@ -323,7 +332,8 @@ class SettingsLayout:
         )
         self.experiment_info_layout.unsaved()
 
-        self.page.controls[control_i[0]] = self.experiment_info_layout
+        # self.page.controls[control_i[0]] = self.experiment_info_layout
+        self.page.add(self.experiment_info_layout)
         self.page.update()
 
     def return_layout(self):
@@ -389,6 +399,7 @@ class ExperimentInfoLayout(UserControl):
     def build(self):
         # self.info_layout = Column(controls=[Text(self.exp_display_text)])
         self.info_layout = Text(self.exp_display_text)
+        # self.info_layout = self.raw_trials_table
 
         return self.info_layout
 
