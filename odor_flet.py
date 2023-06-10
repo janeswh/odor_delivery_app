@@ -106,12 +106,7 @@ class SettingsLayout:
         page.overlay.append(self.get_directory_dialog)
 
         self.create_settings_fields()
-        (
-            self.row1,
-            self.row2,
-            self.row3,
-            self.row4,
-        ) = self.arrange_settings_fields()
+        self.arrange_settings_fields()
         self.create_settings_layout()
         self.page.update()
 
@@ -130,7 +125,6 @@ class SettingsLayout:
         self.num_odors = ft.Dropdown(
             value="",
             label="# of odors",
-            # width=100,
             options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
             # alignment=ft.alignment.center,
             col={"sm": 4},
@@ -151,14 +145,14 @@ class SettingsLayout:
 
     # Arranges setting fields in rows
     def arrange_settings_fields(self):
-        settings_r1 = ft.ResponsiveRow(
+        self.row1 = ft.ResponsiveRow(
             [
                 self.pick_directory_btn,
                 self.directory_path,
             ]
         )
 
-        settings_r2 = ft.ResponsiveRow(
+        self.row2 = ft.ResponsiveRow(
             [
                 Column(col={"sm": 4}, controls=[self.animal_id]),
                 Column(col={"sm": 4}, controls=[self.roi]),
@@ -166,7 +160,7 @@ class SettingsLayout:
             ]
         )
 
-        settings_r3 = ft.ResponsiveRow(
+        self.row3 = ft.ResponsiveRow(
             [
                 Column(col={"sm": 4}, controls=[self.odor_duration]),
                 Column(col={"sm": 4}, controls=[self.time_btw_odors]),
@@ -174,15 +168,13 @@ class SettingsLayout:
             ]
         )
 
-        settings_r4 = ft.ResponsiveRow(
+        self.row4 = ft.ResponsiveRow(
             [
                 self.randomize_option,
                 self.save_settings_btn,
                 self.reset_settings_btn,
             ]
         )
-
-        return settings_r1, settings_r2, settings_r3, settings_r4
 
     def create_buttons(self):
         self.pick_directory_btn = ElevatedButton(
@@ -289,7 +281,11 @@ class SettingsLayout:
             "randomize_trials": self.randomize_option,
         }
         self.save_settings_btn.disabled = True
-        self.page.add(ExperimentInfoLayout(self.page, self.randomize_option))
+        self.experiment_info_layout = ExperimentInfoLayout(
+            self.page, self.randomize_option
+        )
+        self.page.add(self.experiment_info_layout)
+        # self.page.add(ExperimentInfoLayout(self.page, self.randomize_option))
 
         self.page.update()
 
@@ -303,13 +299,27 @@ class SettingsLayout:
         self.time_btw_odors.reset()
         self.randomize_option.value = True
 
+        # finds matching type of controls currently on the page and replaces
+        # with new ExperimentInfoLayout
+        controls_type = [type(control) for control in self.page.controls]
+        control_i = [
+            i
+            for i, control in enumerate(controls_type)
+            if issubclass(controls_type[i], ExperimentInfoLayout)
+        ]
+
+        # Need to make a new ExperimentInfoLayout to replace old one, not sure
+        # why updating old instance with unsaved() doesn't work
+        self.experiment_info_layout = ExperimentInfoLayout(
+            self.page, self.randomize_option
+        )
+        self.experiment_info_layout.unsaved()
+
+        self.page.controls[control_i[0]] = self.experiment_info_layout
         self.page.update()
 
     def return_layout(self):
         return self.settings_layout
-
-    def check_saved_clicked(self):
-        return self.saved_clicked
 
 
 class ExperimentInfoLayout(UserControl):
@@ -322,12 +332,18 @@ class ExperimentInfoLayout(UserControl):
 
     def post_save(self):
         self.exp_display_text = "Saved"
+        self.update()
 
     def unsaved(self):
         self.exp_display_text = "Settings not saved"
+        print("settings not saved should be triggered")
+
+        self.update()
+        # pdb.set_trace()
 
     def build(self):
-        self.info_layout = Column(controls=[Text(self.exp_display_text)])
+        # self.info_layout = Column(controls=[Text(self.exp_display_text)])
+        self.info_layout = Text(self.exp_display_text)
 
         return self.info_layout
 
@@ -362,13 +378,13 @@ class OdorDeliveryApp(UserControl):
         super().__init__()
         self.page = page
         self.page.title = "Odor Delivery App"
-        self.settings = SettingsLayout(page)
+
+        self.settings = SettingsLayout(self.page)
         self.page.add(self.settings.return_layout())
 
-        self.page.update()
+        self.page.add(Text("odor control init"))
 
-    def check_saved_clicked(self):
-        self.saved = self.settings.check_saved_clicked()
+        self.page.update()
 
     def build(self):
         # self.app_layout = Container(
