@@ -30,8 +30,7 @@ class SettingsFields(UserControl):
         on_change=None,
     ):
         super().__init__()
-
-        self.hello = "hello"
+        self.label = label
 
         self.textfield_dict = {
             "Animal ID": {"value": ""},
@@ -42,21 +41,64 @@ class SettingsFields(UserControl):
         }
 
         self.text_field = TextField(
-            value=self.textfield_dict[label]["value"],
+            value=self.textfield_dict[self.label]["value"],
             label=label,
             on_change=on_change,
         )
 
-        if label == "Animal ID":
+        if self.label == "Animal ID":
             self.text_field.hint_text = "e.g. 123456-1-2"
+
+    def reset(self):
+        self.text_field.value = self.textfield_dict[self.label]["value"]
+        self.update()
 
     def build(self):
         return self.text_field
 
 
+# class SaveSettingsButton(UserControl):
+#     def __init__(self, settings_dict):
+#         super().__init__()
+#         self.settings_dict = settings_dict
+
+#     def save_settings(self, e):
+#         now_date = datetime.datetime.now()
+#         self.settings_dict = {
+#             "dir_path": self.directory_path,
+#             "mouse": self.animal_id,
+#             "roi": self.roi,
+#             "date": now_date.strftime("%y%m%d"),
+#             "num_odors": self.num_odors,
+#             "num_trials": self.num_trials,
+#             "odor_duration": self.odor_duration,
+#             "time_btw_odors": self.time_btw_odors,
+#             "randomize_trials": self.randomize_option,
+#         }
+
+#     def build(self):
+#         # self.button = ElevatedButton(
+#         #     "Save Settings",
+#         #     icon=icons.SAVE_ALT_ROUNDED,
+#         #     on_click=self.save_settings,
+#         #     col={"sm": 4},
+#         #     disabled=True,
+#         # )
+#         return ElevatedButton(
+#             "Save Settings",
+#             icon=icons.SAVE_ALT_ROUNDED,
+#             on_click=self.save_settings,
+#             col={"sm": 4},
+#             disabled=True,
+#         )
+
+
 class SettingsLayout:
     def __init__(self, page: Page):
         self.page = page
+        self.settings_dict = None
+        self.saved_click = False
+
         self.get_directory_dialog = FilePicker(
             on_result=self.get_directory_result
         )
@@ -74,8 +116,6 @@ class SettingsLayout:
         self.page.update()
 
     def create_settings_fields(self):
-        self.main_layout = Column()
-
         # self.textfield1_ref = Ref[SettingsFields]()
         self.animal_id = SettingsFields(
             # ref=self.textfield1_ref,
@@ -92,7 +132,7 @@ class SettingsLayout:
             label="# of odors",
             # width=100,
             options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
-            alignment=ft.alignment.center,
+            # alignment=ft.alignment.center,
             col={"sm": 4},
             on_change=self.check_settings_complete,
         )
@@ -135,7 +175,11 @@ class SettingsLayout:
         )
 
         settings_r4 = ft.ResponsiveRow(
-            [self.randomize_option, self.save_settings_btn]
+            [
+                self.randomize_option,
+                self.save_settings_btn,
+                self.reset_settings_btn,
+            ]
         )
 
         return settings_r1, settings_r2, settings_r3, settings_r4
@@ -156,10 +200,20 @@ class SettingsLayout:
         self.save_settings_btn = ElevatedButton(
             "Save Settings",
             icon=icons.SAVE_ALT_ROUNDED,
-            # on_click=self.save_settings_clicked,
+            on_click=self.save_settings_clicked,
             col={"sm": 4},
             disabled=True,
         )
+
+        self.reset_settings_btn = ElevatedButton(
+            "Reset Settings",
+            icon=icons.SAVE_ALT_ROUNDED,
+            on_click=self.reset_settings_clicked,
+            col={"sm": 4},
+            disabled=False,
+        )
+
+        # self.save_settings_btn = SaveSettingsButton(self.settings_dict)
 
     def create_settings_layout(self):
         page_title = Text(
@@ -192,8 +246,6 @@ class SettingsLayout:
             ],
         )
 
-        self.page.add(self.main_layout)
-
     # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
         self.directory_path.value = e.path if e.path else "Cancelled!"
@@ -223,30 +275,117 @@ class SettingsLayout:
 
         self.page.update()
 
-    def make_layout(self):
-        return self.settings_layout
-
-
-class OdorDeliveryApp:
-    def __init__(self, page: Page):
-        self.page = page
-        self.page.title = "Odor Delivery App"
-
-        settings_layout = SettingsLayout(page).make_layout()
-        self.page.add(settings_layout)
-        self.page.add(Text("hello"))
+    def save_settings_clicked(self, e):
+        now_date = datetime.datetime.now()
+        self.settings_dict = {
+            "dir_path": self.directory_path,
+            "mouse": self.animal_id,
+            "roi": self.roi,
+            "date": now_date.strftime("%y%m%d"),
+            "num_odors": self.num_odors,
+            "num_trials": self.num_trials,
+            "odor_duration": self.odor_duration,
+            "time_btw_odors": self.time_btw_odors,
+            "randomize_trials": self.randomize_option,
+        }
+        self.save_settings_btn.disabled = True
+        self.page.add(ExperimentInfoLayout(self.page, self.randomize_option))
 
         self.page.update()
-        # pdb.set_trace()
+
+    def reset_settings_clicked(self, e):
+        self.settings_dict = None
+        self.animal_id.reset()
+        self.roi.reset()
+        self.num_odors.value = ""
+        self.num_trials.reset()
+        self.odor_duration.reset()
+        self.time_btw_odors.reset()
+        self.randomize_option.value = True
+
+        self.page.update()
+
+    def return_layout(self):
+        return self.settings_layout
+
+    def check_saved_clicked(self):
+        return self.saved_clicked
+
+
+class ExperimentInfoLayout(UserControl):
+    def __init__(self, page, randomize):
+        super().__init__()
+        self.page = page
+        self.randomize = randomize
+
+        self.exp_display_text = "Initial save"
+
+    def post_save(self):
+        self.exp_display_text = "Saved"
+
+    def unsaved(self):
+        self.exp_display_text = "Settings not saved"
+
+    def build(self):
+        self.info_layout = Column(controls=[Text(self.exp_display_text)])
+
+        return self.info_layout
+
+
+# class OdorDeliveryApp:
+#     def __init__(self, page: Page):
+#         self.page = page
+#         self.page.title = "Odor Delivery App"
+
+#         self.settings = SettingsLayout(page)
+
+#         self.page.add(self.settings.return_layout())
+#         self.page.add(Text("hello"))
+
+#         self.page.add(
+#             ExperimentInfoLayout(page, self.settings.randomize_option.value)
+#         )
+
+#         self.page.update()
+
+#         if self.settings.saved_click == True:
+#             print("app sees setting saved")
+
+#         self.page.update()
+
+#     def check_saved_clicked(self):
+#         self.saved = self.settings.check_saved_clicked()
+
+
+class OdorDeliveryApp(UserControl):
+    def __init__(self, page: Page):
+        super().__init__()
+        self.page = page
+        self.page.title = "Odor Delivery App"
+        self.settings = SettingsLayout(page)
+        self.page.add(self.settings.return_layout())
+
+        self.page.update()
+
+    def check_saved_clicked(self):
+        self.saved = self.settings.check_saved_clicked()
+
+    def build(self):
+        # self.app_layout = Container(
+        #     content=Column(controls=[self.settings.return_layout])
+        # )
+
+        self.app_layout = Text("odor delivery control")
+        return self.app_layout
 
 
 if __name__ == "__main__":
 
     def main(page: Page):
         page.title = "Odor Delivery App"
-
         app = OdorDeliveryApp(page)
+
+        page.add(app)
         page.update()
-        # page.add(app)
 
     ft.app(target=main)
