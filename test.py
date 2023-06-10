@@ -64,8 +64,13 @@ class SettingsLayout:
         page.overlay.append(self.get_directory_dialog)
 
         self.create_settings_fields()
-        row1, row2, row3, row4 = self.arrange_settings_fields()
-        self.create_settings_layout(row1, row2, row3, row4)
+        (
+            self.row1,
+            self.row2,
+            self.row3,
+            self.row4,
+        ) = self.arrange_settings_fields()
+        self.create_settings_layout()
         self.page.update()
 
     def create_settings_fields(self):
@@ -156,7 +161,7 @@ class SettingsLayout:
             disabled=True,
         )
 
-    def create_settings_layout(self, row1, row2, row3, row4):
+    def create_settings_layout(self):
         page_title = Text(
             "Delivery Settings", style=ft.TextThemeStyle.DISPLAY_MEDIUM
         )
@@ -179,10 +184,10 @@ class SettingsLayout:
             controls=[
                 page_title,
                 directory_prompt,
-                row1,
-                row2,
-                row3,
-                row4,
+                self.row1,
+                self.row2,
+                self.row3,
+                self.row4,
                 # self.trials_table_row,
             ],
         )
@@ -219,16 +224,17 @@ class SettingsLayout:
         self.page.update()
 
     def make_layout(self):
-        self.create_settings_layout(row1, row2, row3, row4)
-        self.page.update()
+        return self.settings_layout
 
 
 class OdorDeliveryApp:
     def __init__(self, page: Page):
         self.page = page
         self.page.title = "Odor Delivery App"
+
+        settings_layout = SettingsLayout(page).make_layout()
+        self.page.add(settings_layout)
         self.page.add(Text("hello"))
-        settings_layout = SettingsLayout(page)
 
         self.page.update()
         # pdb.set_trace()
