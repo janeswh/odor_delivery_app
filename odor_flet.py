@@ -282,7 +282,11 @@ class SettingsLayout:
         }
         self.save_settings_btn.disabled = True
         self.experiment_info_layout = ExperimentInfoLayout(
-            self.page, self.randomize_option
+            self.page,
+            self.randomize_option,
+            self.num_trials.text_field.value,
+            self.num_odors.value,
+            reset=False,
         )
         self.page.add(self.experiment_info_layout)
         # self.page.add(ExperimentInfoLayout(self.page, self.randomize_option))
@@ -311,7 +315,11 @@ class SettingsLayout:
         # Need to make a new ExperimentInfoLayout to replace old one, not sure
         # why updating old instance with unsaved() doesn't work
         self.experiment_info_layout = ExperimentInfoLayout(
-            self.page, self.randomize_option
+            self.page,
+            self.randomize_option,
+            self.num_trials.text_field.value,
+            self.num_odors.value,
+            reset=True,
         )
         self.experiment_info_layout.unsaved()
 
@@ -323,12 +331,50 @@ class SettingsLayout:
 
 
 class ExperimentInfoLayout(UserControl):
-    def __init__(self, page, randomize):
+    def __init__(self, page, randomize, num_trials, num_odors, reset):
         super().__init__()
         self.page = page
         self.randomize = randomize
 
         self.exp_display_text = "Initial save"
+
+        if reset is False:
+            self.num_trials = int(num_trials)
+            self.num_odors = int(num_odors)
+
+            if self.num_trials != "" and self.num_odors != "":
+                self.randomize_trials()
+                self.make_trials_df()
+                self.display_trial_order()
+
+    def randomize_trials(self):
+        self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
+        random.shuffle(self.trials)
+
+    def make_trials_df(self):
+        """
+        Puts odor trials into a df
+        """
+        trial_labels = list(range(1, len(self.trials) + 1))
+        self.trials_df = pd.DataFrame(
+            {"Trial": trial_labels, "Odor #": self.trials}
+        )
+
+    def display_trial_order(self):
+        self.raw_trials_table = ft.DataTable()
+        self.trials_table = [self.raw_trials_table]
+        self.trials_df = self.trials_df.T
+
+        for trials_num in range(len(self.trials_df.columns)):
+            self.raw_trials_table.columns.append(
+                ft.DataColumn(ft.Text(self.trials_df.columns[trials_num]))
+            )
+        self.raw_trials_table.rows.append(
+            ft.DataRow(cells=self.trials_df.loc["Odor #"].tolist())
+        )
+        self.trials_table[0] = self.raw_trials_table
+
+        print("table made")
 
     def post_save(self):
         self.exp_display_text = "Saved"
@@ -339,7 +385,6 @@ class ExperimentInfoLayout(UserControl):
         print("settings not saved should be triggered")
 
         self.update()
-        # pdb.set_trace()
 
     def build(self):
         # self.info_layout = Column(controls=[Text(self.exp_display_text)])
