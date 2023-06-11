@@ -285,13 +285,14 @@ class TrialOrderTable(UserControl):
         super().__init__()
         self.page = page
         self.randomize = randomize
+        self.exp_display_content = Container()
 
         if reset is False:
             self.num_trials = int(num_trials)
             self.num_odors = int(num_odors)
 
             if self.num_trials != "" and self.num_odors != "":
-                self.randomize_trials()
+                self.randomize_trials(repeat=False)
                 self.make_trials_df()
                 self.display_trial_order()
 
@@ -312,9 +313,15 @@ class TrialOrderTable(UserControl):
             "Randomize again", on_click=self.create_trials_table
         )
 
-    def randomize_trials(self, e=None):
-        self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
+    def randomize_trials(self, repeat, e=None):
+        if repeat is False:
+            self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
         random.shuffle(self.trials)
+
+        if repeat is True:
+            self.make_trials_df()
+            self.display_trial_order()
+            print("randomize_trials repeat called")
         self.update()
 
     def make_trials_df(self):
@@ -356,7 +363,7 @@ class TrialOrderTable(UserControl):
 
         self.make_randomize_button()
 
-        self.exp_display_content = Row(
+        self.exp_display_content.content = Row(
             controls=[self.simple_dt], scroll="auto"
         )
 
@@ -396,14 +403,13 @@ class ExperimentInfoLayout(UserControl):
         )
 
     def get_new_trials_table(self, e):
-        print("in_get_new_trials_table")
-
         # self.trials_table.simple_dt.rows[0].cells[0].content.value
 
         # if self.trials_table in self.experiment_info_layout.controls:
         #     self.experiment_info_layout.controls.remove(self.trials_table)
 
-        self.trials_table.create_trials_table(e=None)
+        # self.trials_table.create_trials_table(e=None)
+        self.trials_table.randomize_trials(repeat=True, e=None)
 
         self.experiment_info_layout.controls.append(self.trials_table)
 
