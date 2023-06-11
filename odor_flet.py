@@ -65,7 +65,7 @@ class SettingsLayout(UserControl):
         self.page = page
         self.settings_dict = None
         self.saved_click = False
-        self.experiment_info_layout = None
+        self.experiment_info_layout = Container()
 
         self.get_directory_dialog = FilePicker(
             on_result=self.get_directory_result
@@ -175,10 +175,10 @@ class SettingsLayout(UserControl):
         # self.save_settings_btn = SaveSettingsButton(self.settings_dict)
 
     def create_settings_layout(self):
-        page_title = Text(
+        self.page_title = Text(
             "Delivery Settings", style=ft.TextThemeStyle.DISPLAY_MEDIUM
         )
-        directory_prompt = Text(
+        self.directory_prompt = Text(
             "Select experiment folder to save solenoid info"
         )
 
@@ -186,18 +186,6 @@ class SettingsLayout(UserControl):
         self.page.window_width = 600
         self.page.window_height = 600
         # page.window_resizable = False
-
-        self.settings_layout = ft.Column(
-            width=600,
-            controls=[
-                page_title,
-                directory_prompt,
-                self.row1,
-                self.row2,
-                self.row3,
-                self.row4,
-            ],
-        )
 
     # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
@@ -244,18 +232,13 @@ class SettingsLayout(UserControl):
         self.save_settings_btn.disabled = True
         self.disable_settings_fields(disable=True)
 
-        if self.experiment_info_layout in self.settings_layout.controls:
-            self.settings_layout.controls.remove(self.experiment_info_layout)
-
-        self.experiment_info_layout = ExperimentInfoLayout(
+        self.experiment_info_layout.content = ExperimentInfoLayout(
             self.page,
             self.randomize_option,
             self.num_trials.text_field.value,
             self.num_odors.value,
             reset=False,
         )
-
-        self.settings_layout.controls.append(self.experiment_info_layout)
 
         self.update()
 
@@ -273,8 +256,7 @@ class SettingsLayout(UserControl):
         self.check_settings_complete(e)
         self.disable_settings_fields(disable=False)
 
-        # Remove old Experiment Info display that got reset
-        self.settings_layout.controls.remove(self.experiment_info_layout)
+        self.experiment_info_layout.content = None
         self.update()
 
     def disable_settings_fields(self, disable):
@@ -289,13 +271,26 @@ class SettingsLayout(UserControl):
 
     def build(self):
         print("SettingsLayout build()")
-        return self.settings_layout
+
+        return ft.Column(
+            width=600,
+            controls=[
+                self.page_title,
+                self.directory_prompt,
+                self.row1,
+                self.row2,
+                self.row3,
+                self.row4,
+                self.experiment_info_layout,
+            ],
+        )
 
 
 class TrialOrderTable(UserControl):
     def __init__(self, page, randomize, num_trials, num_odors, reset):
         super().__init__()
         self.page = page
+
         self.randomize = randomize
         self.exp_display_content = Container()
 
@@ -304,26 +299,18 @@ class TrialOrderTable(UserControl):
             self.num_odors = int(num_odors)
 
             if self.num_trials != "" and self.num_odors != "":
-                self.randomize_trials(repeat=False)
+                if self.randomize is True:
+                    self.randomize_trials(repeat=False)
+                else:
+                    self.make_nonrandom_trials()
                 self.make_trials_df()
                 self.display_trial_order()
 
-        print("TrialOrderTable init()")
-
-    def create_trials_table(self, e):
-        self.randomize_trials()
-        self.make_trials_df()
-        self.display_trial_order()
-        print("randomize button pressed")
-
-        self.info_layout = Container(content=self.exp_display_content)
-
-        self.update()
-
-    def make_randomize_button(self):
-        self.randomize_button = ElevatedButton(
-            "Randomize again", on_click=self.create_trials_table
+    def make_nonrandom_trials(self):
+        self.trials = self.trials = (
+            list(range(1, self.num_odors + 1)) * self.num_trials
         )
+        self.update()
 
     def randomize_trials(self, repeat, e=None):
         if repeat is False:
@@ -373,8 +360,6 @@ class TrialOrderTable(UserControl):
         #     color=ft.colors.OUTLINE_VARIANT
         # )
 
-        self.make_randomize_button()
-
         self.exp_display_content.content = Row(
             controls=[self.simple_dt], scroll="auto"
         )
@@ -392,7 +377,7 @@ class ExperimentInfoLayout(UserControl):
     def __init__(self, page, randomize, num_trials, num_odors, reset):
         super().__init__()
         self.page = page
-        self.randomize = randomize
+        self.randomize = randomize.value
         self.randomize_button = None
 
         self.exp_display_content = Text("Experiment Info Title")
@@ -407,32 +392,19 @@ class ExperimentInfoLayout(UserControl):
                 self.num_odors,
                 reset=False,
             )
+        if self.randomize is True:
             self.make_randomize_button()
+        else:
+            self.randomize_button = Container()
 
     def make_randomize_button(self):
         self.randomize_button = ElevatedButton(
-            "ExperimentInfo Random Button", on_click=self.get_new_trials_table
+            "Randomize Again", on_click=self.get_new_trials_table
         )
+        print("randomize button made")
 
     def get_new_trials_table(self, e):
-        # self.trials_table.simple_dt.rows[0].cells[0].content.value
-
-        # if self.trials_table in self.experiment_info_layout.controls:
-        #     self.experiment_info_layout.controls.remove(self.trials_table)
-
-        # self.trials_table.create_trials_table(e=None)
         self.trials_table.randomize_trials(repeat=True, e=None)
-
-        self.experiment_info_layout.controls.append(self.trials_table)
-
-        # pdb.set_trace()
-        # self.trials_table = TrialOrderTable(
-        #     self.page,
-        #     self.randomize,
-        #     self.num_trials,
-        #     self.num_odors,
-        #     reset=False,
-        # )
         self.update()  # this calls TrialOrderTable.build() again
 
     def build(self):
@@ -459,7 +431,6 @@ class OdorDeliveryApp(UserControl):
         #     content=Column(controls=[self.settings.return_layout])
         # )
 
-        self.app_layout = Text("odor delivery control")
         # return self.app_layout
         return self.settings
 
