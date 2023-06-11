@@ -295,6 +295,8 @@ class TrialOrderTable(UserControl):
                 self.make_trials_df()
                 self.display_trial_order()
 
+        print("TrialOrderTable init()")
+
     def create_trials_table(self, e):
         self.randomize_trials()
         self.make_trials_df()
@@ -360,19 +362,9 @@ class TrialOrderTable(UserControl):
 
         self.update()
 
-    def post_save(self):
-        self.exp_display_content = Text("Saved")
-        self.update()
-
-    def unsaved(self):
-        self.exp_display_content = Text("Settings not saved")
-        # self.exp_display_content = None
-        print("settings not saved should be triggered")
-
-        self.update()
-
     def build(self):
         self.info_layout = Container(content=self.exp_display_content)
+        print("TrialOrderTable build() called")
 
         return self.info_layout
 
@@ -398,24 +390,32 @@ class ExperimentInfoLayout(UserControl):
             )
             self.make_randomize_button()
 
-    def unsaved(self):
-        self.trials_table = Text("not saved")
-        self.update()
-
     def make_randomize_button(self):
         self.randomize_button = ElevatedButton(
-            "Randomize again", on_click=self.fetch_trials_table
+            "ExperimentInfo Random Button", on_click=self.get_new_trials_table
         )
 
-    def fetch_trials_table(self, e):
-        self.trials_table = TrialOrderTable(
-            self.page,
-            self.randomize,
-            self.num_trials,
-            self.num_odors,
-            reset=True,
-        )
-        self.update()
+    def get_new_trials_table(self, e):
+        print("in_get_new_trials_table")
+
+        # self.trials_table.simple_dt.rows[0].cells[0].content.value
+
+        # if self.trials_table in self.experiment_info_layout.controls:
+        #     self.experiment_info_layout.controls.remove(self.trials_table)
+
+        self.trials_table.create_trials_table(e=None)
+
+        self.experiment_info_layout.controls.append(self.trials_table)
+
+        # pdb.set_trace()
+        # self.trials_table = TrialOrderTable(
+        #     self.page,
+        #     self.randomize,
+        #     self.num_trials,
+        #     self.num_odors,
+        #     reset=False,
+        # )
+        self.update()  # this calls TrialOrderTable.build() again
 
     def build(self):
         self.experiment_info_layout = Column(
