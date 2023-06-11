@@ -58,42 +58,6 @@ class SettingsFields(UserControl):
         return self.text_field
 
 
-# class SaveSettingsButton(UserControl):
-#     def __init__(self, settings_dict):
-#         super().__init__()
-#         self.settings_dict = settings_dict
-
-#     def save_settings(self, e):
-#         now_date = datetime.datetime.now()
-#         self.settings_dict = {
-#             "dir_path": self.directory_path,
-#             "mouse": self.animal_id,
-#             "roi": self.roi,
-#             "date": now_date.strftime("%y%m%d"),
-#             "num_odors": self.num_odors,
-#             "num_trials": self.num_trials,
-#             "odor_duration": self.odor_duration,
-#             "time_btw_odors": self.time_btw_odors,
-#             "randomize_trials": self.randomize_option,
-#         }
-
-#     def build(self):
-#         # self.button = ElevatedButton(
-#         #     "Save Settings",
-#         #     icon=icons.SAVE_ALT_ROUNDED,
-#         #     on_click=self.save_settings,
-#         #     col={"sm": 4},
-#         #     disabled=True,
-#         # )
-#         return ElevatedButton(
-#             "Save Settings",
-#             icon=icons.SAVE_ALT_ROUNDED,
-#             on_click=self.save_settings,
-#             col={"sm": 4},
-#             disabled=True,
-#         )
-
-
 # class SettingsLayout:
 class SettingsLayout(UserControl):
     def __init__(self, page: Page):
@@ -219,11 +183,6 @@ class SettingsLayout(UserControl):
             "Select experiment folder to save solenoid info"
         )
 
-        # # Empty space for trial order
-        # self.raw_trials_table = ft.DataTable()
-        # self.trials_table = [self.raw_trials_table]
-        # self.trials_table_row = ft.Container(ft.Row(self.trials_table))
-
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
         self.page.window_width = 600
         self.page.window_height = 600
@@ -286,8 +245,8 @@ class SettingsLayout(UserControl):
         }
         self.save_settings_btn.disabled = True
 
-        # if self.experiment_info_layout is not None:
-        #     self.page.controls.remove(self.experiment_info_layout)
+        if self.experiment_info_layout in self.settings_layout.controls:
+            self.settings_layout.controls.remove(self.experiment_info_layout)
 
         self.experiment_info_layout = ExperimentInfoLayout(
             self.page,
@@ -297,11 +256,8 @@ class SettingsLayout(UserControl):
             reset=False,
         )
 
-        # self.page.add(self.experiment_info_layout)
-
-        # self.page.update()
-
         self.settings_layout.controls.append(self.experiment_info_layout)
+
         self.update()
 
     def reset_settings_clicked(self, e):
@@ -315,39 +271,14 @@ class SettingsLayout(UserControl):
         self.time_btw_odors.reset()
         self.randomize_option.value = True
 
-        # # finds matching type of controls currently on the page and replaces
-        # # with new ExperimentInfoLayout
-        # controls_type = [type(control) for control in self.page.controls]
-        # control_i = [
-        #     i
-        #     for i, control in enumerate(controls_type)
-        #     if issubclass(controls_type[i], ExperimentInfoLayout)
-        # ]
-
-        # Need to make a new ExperimentInfoLayout to replace old one, not sure
-        # why updating old instance with unsaved() doesn't work
-
         self.check_settings_complete(e)
 
-        # if self.experiment_info_layout is not None:
-        #     self.page.controls.remove(self.experiment_info_layout)
-
-        # self.experiment_info_layout = ExperimentInfoLayout(
-        #     self.page,
-        #     self.randomize_option,
-        #     self.num_trials.text_field.value,
-        #     self.num_odors.value,
-        #     reset=True,
-        # )
-        self.experiment_info_layout.unsaved()
+        # Remove old Experiment Info display that got reset
+        self.settings_layout.controls.remove(self.experiment_info_layout)
         self.update()
 
-        # self.page.controls[control_i[0]] = self.experiment_info_layout
-        # self.page.add(self.experiment_info_layout)
-        # self.page.update()
-
-    # def return_layout(self):
     def build(self):
+        print("SettingsLayout build()")
         return self.settings_layout
 
 
@@ -355,10 +286,7 @@ class TrialOrderTable(UserControl):
     def __init__(self, page, randomize, num_trials, num_odors, reset):
         super().__init__()
         self.page = page
-        self.page = page
         self.randomize = randomize
-
-        self.exp_display_content = Text("Initial save")
 
         if reset is False:
             self.num_trials = int(num_trials)
@@ -394,7 +322,6 @@ class TrialOrderTable(UserControl):
         self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
         random.shuffle(self.trials)
         self.update()
-        print("randomize happening")
 
     def make_trials_df(self):
         """
@@ -447,8 +374,8 @@ class TrialOrderTable(UserControl):
         self.update()
 
     def unsaved(self):
-        # self.exp_display_content = Text("Settings not saved")
-        self.exp_display_content = None
+        self.exp_display_content = Text("Settings not saved")
+        # self.exp_display_content = None
         print("settings not saved should be triggered")
 
         self.update()
@@ -471,7 +398,7 @@ class ExperimentInfoLayout(UserControl):
         if reset is False:
             self.num_trials = int(num_trials)
             self.num_odors = int(num_odors)
-            self.trial_table = TrialOrderTable(
+            self.trials_table = TrialOrderTable(
                 self.page,
                 self.randomize,
                 self.num_trials,
@@ -481,7 +408,7 @@ class ExperimentInfoLayout(UserControl):
             self.make_randomize_button()
 
     def unsaved(self):
-        self.trial_table = Text("not saved")
+        self.trials_table = Text("not saved")
         self.update()
 
     def make_randomize_button(self):
@@ -501,7 +428,7 @@ class ExperimentInfoLayout(UserControl):
 
     def build(self):
         self.experiment_info_layout = Column(
-            controls=[self.trial_table, self.randomize_button]
+            controls=[self.trials_table, self.randomize_button]
         )
         return self.experiment_info_layout
 
