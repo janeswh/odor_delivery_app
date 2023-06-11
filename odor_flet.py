@@ -379,6 +379,7 @@ class ExperimentInfoLayout(UserControl):
         self.page = page
         self.randomize = randomize.value
         self.randomize_button = None
+        self.experiment_started = False
 
         self.exp_display_content = Text("Experiment Info Title")
 
@@ -397,19 +398,31 @@ class ExperimentInfoLayout(UserControl):
         else:
             self.randomize_button = Container()
 
+        self.start_button = ElevatedButton(
+            "Start Experiment", on_click=self.start_experiment
+        )
+
     def make_randomize_button(self):
         self.randomize_button = ElevatedButton(
             "Randomize Again", on_click=self.get_new_trials_table
         )
-        print("randomize button made")
 
     def get_new_trials_table(self, e):
         self.trials_table.randomize_trials(repeat=True, e=None)
-        self.update()  # this calls TrialOrderTable.build() again
+        self.update()
+
+    def start_experiment(self, e):
+        print("experiment started")
+        self.experiment_started = True
+        self.experiment_info_layout.controls = [Text("Exp started")]
+        self.update()
 
     def build(self):
         self.experiment_info_layout = Column(
-            controls=[self.trials_table, self.randomize_button]
+            controls=[
+                self.trials_table,
+                Row(controls=[self.randomize_button, self.start_button]),
+            ]
         )
         return self.experiment_info_layout
 
