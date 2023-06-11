@@ -242,6 +242,7 @@ class SettingsLayout(UserControl):
             "randomize_trials": self.randomize_option,
         }
         self.save_settings_btn.disabled = True
+        self.disable_settings_fields(disable=True)
 
         if self.experiment_info_layout in self.settings_layout.controls:
             self.settings_layout.controls.remove(self.experiment_info_layout)
@@ -270,10 +271,21 @@ class SettingsLayout(UserControl):
         self.randomize_option.value = True
 
         self.check_settings_complete(e)
+        self.disable_settings_fields(disable=False)
 
         # Remove old Experiment Info display that got reset
         self.settings_layout.controls.remove(self.experiment_info_layout)
         self.update()
+
+    def disable_settings_fields(self, disable):
+        self.pick_directory_btn.disabled = disable
+        self.animal_id.disabled = disable
+        self.roi.disabled = disable
+        self.num_odors.disabled = disable
+        self.num_trials.disabled = disable
+        self.odor_duration.disabled = disable
+        self.time_btw_odors.disabled = disable
+        self.randomize_option.disabled = disable
 
     def build(self):
         print("SettingsLayout build()")
