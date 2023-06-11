@@ -76,7 +76,6 @@ class SettingsLayout(UserControl):
         self.create_settings_fields()
         self.arrange_settings_fields()
         self.create_settings_layout()
-        # self.page.update()
 
     def create_settings_fields(self):
         # self.textfield1_ref = Ref[SettingsFields]()
@@ -227,7 +226,6 @@ class SettingsLayout(UserControl):
         else:
             self.save_settings_btn.disabled = False
 
-        # self.page.update()
         self.update()
 
     def save_settings_clicked(self, e):
@@ -297,28 +295,22 @@ class TrialOrderTable(UserControl):
                 self.make_trials_df()
                 self.display_trial_order()
 
-    def create_trials_table(self, e=None):
+    def create_trials_table(self, e):
         self.randomize_trials()
         self.make_trials_df()
         self.display_trial_order()
         print("randomize button pressed")
 
-        # # Delete old table and replace with new
-        # pdb.set_trace()
-        # if self.info_layout is not None:
-        #     self.page.controls.remove(self.info_layout)
-
         self.info_layout = Container(content=self.exp_display_content)
-        self.page.add(self.info_layout)
+
         self.update()
-        self.page.update()
 
     def make_randomize_button(self):
         self.randomize_button = ElevatedButton(
             "Randomize again", on_click=self.create_trials_table
         )
 
-    def randomize_trials(self):
+    def randomize_trials(self, e=None):
         self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
         random.shuffle(self.trials)
         self.update()
@@ -333,7 +325,6 @@ class TrialOrderTable(UserControl):
         self.trials_df = self.trials_df.T
 
     def display_trial_order(self):
-        # pdb.set_trace()
         # Using simpledt package fixes the page.add(DataTable) issue
         # https://github.com/StanMathers/simple-datatable
 
@@ -431,31 +422,6 @@ class ExperimentInfoLayout(UserControl):
             controls=[self.trials_table, self.randomize_button]
         )
         return self.experiment_info_layout
-
-
-# class OdorDeliveryApp:
-#     def __init__(self, page: Page):
-#         self.page = page
-#         self.page.title = "Odor Delivery App"
-
-#         self.settings = SettingsLayout(page)
-
-#         self.page.add(self.settings.return_layout())
-#         self.page.add(Text("hello"))
-
-#         self.page.add(
-#             ExperimentInfoLayout(page, self.settings.randomize_option.value)
-#         )
-
-#         self.page.update()
-
-#         if self.settings.saved_click == True:
-#             print("app sees setting saved")
-
-#         self.page.update()
-
-#     def check_saved_clicked(self):
-#         self.saved = self.settings.check_saved_clicked()
 
 
 class OdorDeliveryApp(UserControl):
