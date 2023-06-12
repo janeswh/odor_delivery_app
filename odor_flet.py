@@ -620,7 +620,7 @@ if __name__ == "__main__":
 
     def main(page: Page):
         page.title = "Odor Delivery App"
-        page.theme.mode = ft.ThemeMode.DARK
+        page.theme_mode = ft.ThemeMode.DARK
         app = OdorDeliveryApp(page)
 
         page.add(app)
