@@ -390,8 +390,8 @@ class OdorDeliveryApp(UserControl):
 
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
         self.page.window_width = 600
-        self.page.window_height = 2000
-        # self.page.window_resizable = False
+        self.page.window_height = 800
+        self.page.window_resizable = False
         self.pick_directory_layout = ft.ResponsiveRow(
             [
                 self.pick_directory_btn,
@@ -620,6 +620,7 @@ if __name__ == "__main__":
 
     def main(page: Page):
         page.title = "Odor Delivery App"
+        page.theme.mode = ft.ThemeMode.DARK
         app = OdorDeliveryApp(page)
 
         page.add(app)
