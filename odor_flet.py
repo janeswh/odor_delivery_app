@@ -223,16 +223,14 @@ class TrialOrderTable(UserControl):
         """
         Puts odor trials into a df
         """
-
         self.trials_df = pd.DataFrame(self.trials)
         self.trials_df.rename(index=lambda s: s + 1, inplace=True)
-        self.trials_df = self.trials_df.T
 
     def display_trial_order(self):
         # Using simpledt package fixes the page.add(DataTable) issue
         # https://github.com/StanMathers/simple-datatable
 
-        simplet_df = DataFrame(self.trials_df)
+        simplet_df = DataFrame(self.trials_df.T)
         self.simple_dt = simplet_df.datatable
 
         # Add Trial/Odor labels to table
@@ -269,65 +267,30 @@ class TrialOrderTable(UserControl):
         return self.info_layout
 
 
-class ExperimentInfoLayout(UserControl):
-    def __init__(self, page, randomize, num_trials, num_odors, reset):
+class ExperimentProgressLayout(UserControl):
+    def __init__(self, page):
         super().__init__()
         self.page = page
-        self.randomize = randomize.value
-        self.randomize_button = None
-        self.experiment_started = False
 
-        self.exp_display_content = Text("Experiment Info Title")
-
-        if reset is False:
-            self.num_trials = num_trials
-            self.num_odors = num_odors
-            self.trials_table = TrialOrderTable(
-                self.page,
-                self.randomize,
-                self.num_trials,
-                self.num_odors,
-                reset=False,
-            )
-        if self.randomize is True:
-            self.make_randomize_button()
-        else:
-            self.randomize_button = Container()
-
-        self.start_button = ElevatedButton(
-            "Start Experiment", on_click=self.start_experiment
-        )
-
-    def make_randomize_button(self):
-        self.randomize_button = ElevatedButton(
-            "Randomize Again", on_click=self.get_new_trials_table
-        )
-
-    def get_new_trials_table(self, e):
-        self.trials_table.randomize_trials(repeat=True, e=None)
-        self.update()
-
-    def start_experiment(self, e):
-        print("experiment started")
-        self.experiment_started = True
-        self.experiment_info_layout.controls = [Text("Exp started")]
-        self.update()
+        self.started_text = Text("Experiment in progress...")
 
     def build(self):
-        self.experiment_info_layout = Column(
+        self.layout = Column(
             controls=[
-                self.trials_table,
-                # Row(controls=[self.randomize_button, self.start_button]),
+                self.started_text,
             ]
         )
 
-        return self.experiment_info_layout
+        return self.layout
 
 
 class OdorDeliveryApp(UserControl):
     def __init__(self, page: Page):
         super().__init__()
         self.page = page
+        self.page.snack_bar = ft.SnackBar(
+            content=ft.Text("Snack bar init"), bgcolor=ft.colors.SECONDARY
+        )
         self.directory_path = Text(col={"sm": 8})
 
         self.get_directory_dialog = FilePicker(
@@ -345,23 +308,33 @@ class OdorDeliveryApp(UserControl):
             check_complete=self.check_settings_complete,
         )
 
-        self.experiment_info_layout = Container()
+        self.trial_table = None
 
         self.make_app_layout()
 
         self.page.update()
 
     def make_app_layout(self):
-        self.page_title = Text(
-            "Delivery Settings", style=ft.TextThemeStyle.DISPLAY_MEDIUM
+        self.settings_title = Text(
+            "Experiment Settings", style=ft.TextThemeStyle.HEADLINE_LARGE
         )
+
+        self.trials_title = Text(
+            "Trial Order", style=ft.TextThemeStyle.HEADLINE_LARGE
+        )
+
+        self.progress_title = Text(
+            "Experiment Progress", style=ft.TextThemeStyle.HEADLINE_LARGE
+        )
+
         self.directory_prompt = Text(
             "Select experiment folder to save solenoid info"
         )
 
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
         self.page.window_width = 600
-        self.page.window_height = 600
+        self.page.window_height = 2000
+        # self.page.window_resizable = False
         self.pick_directory_layout = ft.ResponsiveRow(
             [
                 self.pick_directory_btn,
@@ -382,13 +355,13 @@ class OdorDeliveryApp(UserControl):
         self.app_layout = Column(
             width=600,
             controls=[
-                self.page_title,
+                self.settings_title,
                 self.directory_prompt,
                 self.pick_directory_layout,
                 self.settings_fields,
                 self.save_reset_buttons,
-                self.experiment_info_layout,
-                self.randomize_start_buttons,
+                # self.experiment_info_layout,
+                # self.randomize_start_buttons,
             ],
         )
 
@@ -430,29 +403,56 @@ class OdorDeliveryApp(UserControl):
 
         self.settings_fields.disable_settings_fields(disable=True)
 
-        self.experiment_info_layout.content = ExperimentInfoLayout(
+        # self.experiment_info_layout = ExperimentInfoLayout(
+        #     self.page,
+        #     self.randomize_option,
+        #     self.num_trials,
+        #     self.num_odors,
+        #     reset=False,
+        # )
+
+        # Adds trial order table
+        self.trial_table = TrialOrderTable(
             self.page,
-            self.randomize_option,
+            self.randomize_option.value,
             self.num_trials,
             self.num_odors,
             reset=False,
         )
 
-        self.make_rand_start_butons()
-        self.randomize_start_buttons.controls = [
-            self.randomize_button,
-            self.start_button,
-        ]
+        self.make_rand_start_buttons()
+
+        if self.randomize_option.value is True:
+            self.randomize_start_buttons.controls = [
+                self.randomize_button,
+                self.start_button,
+            ]
+        else:
+            self.randomize_start_buttons.controls = [
+                self.start_button,
+            ]
+
+        self.app_layout.controls.extend(
+            [
+                ft.Divider(),
+                self.trials_title,
+                self.trial_table,
+                self.randomize_start_buttons,
+            ]
+        )
 
         self.update()
 
     def reset_clicked(self, e):
         self.directory_path.value = None
         self.randomize_option.value = True
+        self.randomize_option.disabled = False
         self.settings_fields.reset_settings_clicked(e)
         self.check_settings_complete(e)
         self.pick_directory_btn.disabled = False
-        self.experiment_info_layout.content = None
+
+        if self.trial_table in self.app_layout.controls:
+            self.app_layout.controls.remove(self.trial_table)
 
         if self.randomize_start_buttons in self.app_layout.controls:
             self.app_layout.controls.remove(self.randomize_start_buttons)
@@ -480,6 +480,40 @@ class OdorDeliveryApp(UserControl):
             self.save_settings_btn.disabled = False
 
         self.update()
+
+    def randomize_trials_again(self, e):
+        self.trial_table.randomize_trials(repeat=True, e=None)
+        self.update()
+
+    def start_clicked(self, e):
+        self.reset_settings_btn.disabled = True
+        self.randomize_button.disabled = True
+        self.start_button.disabled = True
+
+        self.save_solenoid_info()
+
+        self.exp_progress_layout = ExperimentProgressLayout(self.page)
+        self.app_layout.controls.extend(
+            [ft.Divider(), self.progress_title, self.exp_progress_layout]
+        )
+        self.update()
+
+    def save_solenoid_info(self):
+        csv_name = (
+            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_order.csv"
+        )
+
+        path = os.path.join(self.directory_path.value, csv_name)
+
+        self.trial_table.trials_df.to_csv(
+            path, header=["Odor #"], index_label="Trial"
+        )
+
+        self.page.snack_bar.content.value = (
+            f"Solenoid info saved to {csv_name} in experiment directory."
+        )
+        self.page.snack_bar.open = True
+        self.page.update()
 
     def create_buttons(self):
         self.pick_directory_btn = ElevatedButton(
@@ -510,22 +544,19 @@ class OdorDeliveryApp(UserControl):
             disabled=False,
         )
 
-    def make_rand_start_butons(self):
+    def make_rand_start_buttons(self):
         self.start_button = ElevatedButton(
-            "Start Experiment!!!!",  # on_click=self.start_experiment
+            "Start Experiment!!!!", on_click=self.start_clicked
         )
 
-        self.randomize_button = ElevatedButton(
-            "Randomize Again",  # on_click=self.get_new_trials_table
-        )
+        if self.randomize_option.value is True:
+            self.randomize_button = ElevatedButton(
+                "Randomize Again",
+                on_click=self.randomize_trials_again,
+            )
 
     def build(self):
-        # self.app_layout = Container(
-        #     content=Column(controls=[self.settings.return_layout])
-        # )
-
         return self.app_layout
-        # return self.settings
 
 
 if __name__ == "__main__":
