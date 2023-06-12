@@ -23,6 +23,63 @@ import os
 import pdb
 
 
+class ArduinoSession:
+    """
+    Defines the class for holding signals sent to the arduino per session
+    """
+
+    def __init__(self, settings, odor_sequence):
+        self.settings = settings
+        self.solenoid_order = odor_sequence
+        self.port_opened = False
+        self.trig_signal = False  # Whether Arduino has triggered microscope
+        self.sequence_complete = (
+            False  # Whether odor delivery sequence has finished
+        )
+
+        # Keep track of when the solenoids were activated
+        self.time_solenoid_on = (
+            []
+        )  # Contains times that solenoids were activated
+        self.time_solenoid_off = (
+            []
+        )  # Contains times that solenoids were closed
+
+        # if sent = 1, then that means a string has been sent to the arduino
+        # and we need to wait for it to be done
+        self.sent = 0
+
+        self.time_scope_TTL = []
+
+    def open_port(self):
+        """
+        Opens arduino port
+        """
+        self.arduino = serial.Serial()
+
+        self.arduino.port = "COM7"  # Change COM PORT if COMPort error occurs
+        self.arduino.baudrate = 9600
+        self.arduino.timeout = 2
+        self.arduino.setRTS(False)
+
+        self.arduino.open()
+        self.port_opened = True
+
+    def close_port(self):
+        """
+        Closes arduino port
+        """
+        self.arduino.close()
+        self.port_opened = False
+
+    def get_arduino_msg(self):
+        """
+        Gets message back from arduino after sending it str
+        """
+        if self.arduino.isOpen():
+            self.sent_info
+
+
 class SettingsFields(UserControl):
     def __init__(
         self,
