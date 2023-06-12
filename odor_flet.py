@@ -71,7 +71,6 @@ class TestSettingsLayout(UserControl):
         self.directory_path = directory_path
         self.settings_dict = None
         self.saved_click = False
-        self.experiment_info_layout = Container()
 
         self.animal_id = SettingsFields(
             # ref=self.textfield1_ref,
@@ -152,7 +151,6 @@ class TestSettingsLayout(UserControl):
         )
 
     def reset_settings_clicked(self, e):
-        self.directory_path.value = None
         self.settings_dict = None
         self.animal_id.reset()
         self.roi.reset()
@@ -160,42 +158,26 @@ class TestSettingsLayout(UserControl):
         self.num_trials.reset()
         self.odor_duration.reset()
         self.time_btw_odors.reset()
-        self.randomize_option.value = True
 
-        self.check_settings_complete(e)
         self.disable_settings_fields(disable=False)
 
-        self.experiment_info_layout.content = None
         self.update()
 
     def disable_settings_fields(self, disable):
-        # self.pick_directory_btn.disabled = disable
         self.animal_id.disabled = disable
         self.roi.disabled = disable
         self.num_odors.disabled = disable
         self.num_trials.disabled = disable
         self.odor_duration.disabled = disable
         self.time_btw_odors.disabled = disable
-        # self.randomize_option.disabled = disable
-
-        if disable is False:
-            print("save button should be enabled")
-        else:
-            print("settings fields should be disabled")
 
         self.update()
 
     def build(self):
-        print("SettingsLayout build()")
-
         return ft.Column(
-            # width=600,
             controls=[
                 self.row1,
                 self.row2,
-                # self.row3,
-                # self.row4,
-                self.experiment_info_layout,
             ],
         )
 
@@ -335,7 +317,7 @@ class ExperimentInfoLayout(UserControl):
         self.experiment_info_layout = Column(
             controls=[
                 self.trials_table,
-                Row(controls=[self.randomize_button, self.start_button]),
+                # Row(controls=[self.randomize_button, self.start_button]),
             ]
         )
 
@@ -386,6 +368,7 @@ class OdorDeliveryApp(UserControl):
                 self.directory_path,
             ]
         )
+
         self.save_reset_buttons = ft.ResponsiveRow(
             [
                 self.randomize_option,
@@ -393,6 +376,8 @@ class OdorDeliveryApp(UserControl):
                 self.reset_settings_btn,
             ]
         )
+
+        self.randomize_start_buttons = ft.Row()
 
         self.app_layout = Column(
             width=600,
@@ -403,6 +388,7 @@ class OdorDeliveryApp(UserControl):
                 self.settings_fields,
                 self.save_reset_buttons,
                 self.experiment_info_layout,
+                self.randomize_start_buttons,
             ],
         )
 
@@ -452,17 +438,28 @@ class OdorDeliveryApp(UserControl):
             reset=False,
         )
 
+        self.make_rand_start_butons()
+        self.randomize_start_buttons.controls = [
+            self.randomize_button,
+            self.start_button,
+        ]
+
         self.update()
 
     def reset_clicked(self, e):
-        print("reset!")
+        self.directory_path.value = None
+        self.randomize_option.value = True
+        self.settings_fields.reset_settings_clicked(e)
+        self.check_settings_complete(e)
+        self.pick_directory_btn.disabled = False
+        self.experiment_info_layout.content = None
+
+        if self.randomize_start_buttons in self.app_layout.controls:
+            self.app_layout.controls.remove(self.randomize_start_buttons)
+
+        self.update()
 
     def check_settings_complete(self, e=None):
-        # if self.directory_path.value == "":
-        #     self.save_settings_btn.disabled = True
-        # else:
-        #     self.save_settings_btn.disabled = False
-
         if (
             ""
             in [
@@ -511,6 +508,15 @@ class OdorDeliveryApp(UserControl):
             on_click=self.reset_clicked,
             col={"sm": 4},
             disabled=False,
+        )
+
+    def make_rand_start_butons(self):
+        self.start_button = ElevatedButton(
+            "Start Experiment!!!!",  # on_click=self.start_experiment
+        )
+
+        self.randomize_button = ElevatedButton(
+            "Randomize Again",  # on_click=self.get_new_trials_table
         )
 
     def build(self):
