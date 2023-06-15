@@ -13,7 +13,7 @@ import time
 
 
 class ArduinoSession(UserControl):
-    def __init__(self, page, settings, odor_sequence, pb, pb_text):
+    def __init__(self, page, settings, odor_sequence):
         """
         Defines the class for holding signals sent to the arduino per session
         """
@@ -21,8 +21,15 @@ class ArduinoSession(UserControl):
         self.page = page
         self.acq_params = settings
         self.solenoid_order = odor_sequence
-        self.progress_bar = pb
-        self.progress_bar_text = pb_text
+        # self.progress_bar = pb
+        # self.progress_bar_text = pb_text
+
+        # Progress bar
+        self.progress_bar = ft.ProgressBar(width=600)
+        # Progress bar text
+        self.progress_bar_text = Text()
+        self.pb_column = Column([self.progress_bar_text, self.progress_bar])
+
 
         # Plateholder container for arduino progress msgs
         # self.arduino_step_text = Text("Initial arduino step progress")
@@ -105,46 +112,49 @@ class ArduinoSession(UserControl):
         )
         self.time_scope_TTL.append(time_TTL)
 
-        self.arduino_step_text.value = f"trial {trial+1}, odor "
-        f"{solenoid} microscope triggered at {time_TTL}"
+        self.arduino_step_text.value = (f"trial {trial+1}, odor "
+        f"{solenoid} microscope triggered at {time_TTL}")
 
         print(
             f"trial {trial+1}, odor {solenoid} microscope triggered at "
             f"{time_TTL}"
         )
 
+        self.update()
         time.sleep(1)
 
         time_solenoid_on = datetime.datetime.now().isoformat(
             "|", timespec="milliseconds"
         )
         self.time_solenoid_on.append(time_solenoid_on)
-        self.arduino_step_text.value = f"trial {trial+1}, odor "
-        f"{solenoid} released at {time_solenoid_on}"
+        self.arduino_step_text.value = (f"trial {trial+1}, odor "
+        f"{solenoid} released at {time_solenoid_on}")
 
         print(
             f"trial {trial+1}, odor {solenoid} released at "
             f"{time_solenoid_on}"
         )
 
+        self.update()
         time.sleep(1)
 
         time_solenoid_off = datetime.datetime.now().isoformat(
             "|", timespec="milliseconds"
         )
         self.time_solenoid_off.append(time_solenoid_off)
-        self.arduino_step_text.value = f"trial {trial+1}, odor "
-        f"{solenoid} stopped at {time_solenoid_off}"
+        self.arduino_step_text.value = (f"trial {trial+1}, odor "
+        f"{solenoid} stopped at {time_solenoid_off}")
 
         print(
             f"trial {trial+1}, odor {solenoid} stopped at "
             f"{time_solenoid_off}"
         )
 
+        self.update()
         time.sleep(1)
 
-        self.arduino_step_text.value = f"trial {trial+1}, odor "
-        f"{solenoid} delay stopped, send next solenoid info"
+        self.arduino_step_text.value = (f"trial {trial+1}, odor "
+        f"{solenoid} delay stopped, send next solenoid info")
 
         print(
             f"trial {trial+1}, odor {solenoid} delay stopped, send next "
@@ -243,11 +253,12 @@ class ArduinoSession(UserControl):
 
             # for solenoid in self.solenoid_order:
             for trial in range(len(self.solenoid_order)):
-                self.progress_bar_text.value = f"Executing Trial {trial+1}"
+                self.progress_bar_text.value = (f"Executing Trial {trial+1}/"
+                                                f"{len(self.solenoid_order)}")
                 self.progress_bar.value = trial * (
                     1 / len(self.solenoid_order)
                 )
-                # self.update()
+                self.update()
                 print(f"doing trial {trial+1}")
 
                 to_be_sent = (
@@ -274,6 +285,9 @@ class ArduinoSession(UserControl):
 
             self.sequence_complete = True
             self.trig_signal = False
+            self.progress_bar.value = len(self.solenoid_order) * (
+                    1 / len(self.solenoid_order)
+                )
 
             self.progress_bar_text.value = "Odor delivery sequence complete."
 
@@ -289,8 +303,9 @@ class ArduinoSession(UserControl):
                 controls=[
                     # self.progress_bar_text,
                     # self.progress_bar,
-                    # self.arduino_step_text
-                    Text("arduino_layout here"),
+                    self.pb_column,
+                    self.arduino_step_text,
+                    # Text("arduino_layout here"),
                 ]
             )
         )

@@ -14,10 +14,13 @@ from flet import (
 import datetime
 
 import os
+import pdb
 
 from settings_layout import SettingsLayout
 from trial_order import TrialOrderTable
 from experiment import ExperimentProgressLayout
+from arduino_functions import ArduinoSession
+
 
 
 class OdorDeliveryApp(UserControl):
@@ -229,8 +232,14 @@ class OdorDeliveryApp(UserControl):
         self.save_solenoid_info()
 
         # self.exp_progress_layout = Container()
-        self.exp_progress_layout = ExperimentProgressLayout(
-            self.page, self.settings_dict, self.trial_table.trials
+        # self.exp_progress_layout = ExperimentProgressLayout(
+        #     self.page, self.settings_dict, self.trial_table.trials
+        # )
+
+        self.exp_progress_layout = ArduinoSession(
+            self.page,
+            self.settings_dict,
+            self.trial_table.trials,
         )
 
         self.app_layout.controls.extend(
@@ -239,9 +248,12 @@ class OdorDeliveryApp(UserControl):
 
         self.update()
 
-        self.exp_progress_layout.get_arduino_layout()
 
-        self.exp_progress_layout.arduino_display.generate_arduino_str()
+
+        # self.exp_progress_layout.get_arduino_layout()
+
+
+        self.exp_progress_layout.generate_arduino_str()
 
         self.update()
 
