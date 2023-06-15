@@ -252,7 +252,19 @@ class OdorDeliveryApp(UserControl):
 
         self.exp_progress_layout.generate_arduino_str()
 
-        self.update()
+
+        self.exp_progress_layout.save_solenoid_timings()
+
+        timings_name = (
+            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
+        )
+
+        self.page.snack_bar.content.value = (
+            f"Solenoid timings saved to {timings_name} in experiment directory."
+        )
+        self.page.snack_bar.open = True
+        self.page.update()
+
 
     def save_solenoid_info(self):
         csv_name = (

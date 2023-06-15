@@ -10,6 +10,8 @@ import datetime
 import serial
 import pdb
 import time
+import pandas as pd
+import os
 
 
 class ArduinoSession(UserControl):
@@ -21,8 +23,11 @@ class ArduinoSession(UserControl):
         self.page = page
         self.acq_params = settings
         self.solenoid_order = odor_sequence
-        # self.progress_bar = pb
-        # self.progress_bar_text = pb_text
+
+        self.date = settings['date']
+        self.animal_id = settings['mouse']
+        self.roi = settings['roi']
+        self.directory_path = settings['dir_path']
 
         # Progress bar
         self.progress_bar = ft.ProgressBar(width=600)
@@ -35,11 +40,6 @@ class ArduinoSession(UserControl):
         # self.arduino_step_text = Text("Initial arduino step progress")
         self.arduino_step_text = Text()
 
-        # # Progress bar
-        # self.progress_bar = ft.ProgressBar(width=600)
-        # # Progress bar text
-        # self.progress_bar_text = Text()
-        # self.pb_column = Column([self.progress_bar_text, self.progress_bar])
 
         self.port_opened = False
         self.trig_signal = False  # Whether Arduino has triggered microscope
@@ -246,12 +246,7 @@ class ArduinoSession(UserControl):
         """
         self.trig_signal = True  # for testing only
         if self.trig_signal == True:
-            # Adds progress bar
-            # bar = stqdm(
-            #     range(len(self.solenoid_order)), desc=f"Executing Trial"
-            # )
 
-            # for solenoid in self.solenoid_order:
             for trial in range(len(self.solenoid_order)):
                 self.progress_bar_text.value = (f"Executing Trial {trial+1}/"
                                                 f"{len(self.solenoid_order)}")
@@ -297,15 +292,37 @@ class ArduinoSession(UserControl):
         # else:
         # st.info("Already finished.")
 
+    def save_solenoid_timings(self):
+        """
+        Saves the timestamps for when each solenoid was triggered, opened,
+        and closed to a .csv file.
+        """
+        csv_name = (
+            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
+        )
+        path = os.path.join(self.directory_path, csv_name)
+
+        trial_labels = list(range(1, len(self.solenoid_order) + 1))
+        timings_df = pd.DataFrame(
+            {
+                "Trial": trial_labels,
+                "Odor #": self.solenoid_order,
+                "Microscope Triggered": self.time_scope_TTL,
+                "Solenoid opened": self.time_solenoid_on,
+                "Solenoid closed": self.time_solenoid_off,
+            }
+        )
+
+        timings_df.to_csv(path, index=False)
+
+
+
     def build(self):
         self.arduino_layout = Container(
             Column(
                 controls=[
-                    # self.progress_bar_text,
-                    # self.progress_bar,
                     self.pb_column,
                     self.arduino_step_text,
-                    # Text("arduino_layout here"),
                 ]
             )
         )
