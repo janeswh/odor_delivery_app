@@ -18,7 +18,6 @@ import pdb
 
 from settings_layout import SettingsLayout
 from trial_order import TrialOrderTable
-from experiment import ExperimentProgressLayout
 from arduino_functions import ArduinoSession
 
 
@@ -48,7 +47,7 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.trial_table = None
-
+        self.divider= ft.Divider()
         self.make_app_layout()
 
         self.page.update()
@@ -173,14 +172,17 @@ class OdorDeliveryApp(UserControl):
 
         self.app_layout.controls.extend(
             [
-                ft.Divider(),
+                self.divider,
                 self.trials_title,
                 self.trial_table,
                 self.randomize_start_buttons,
             ]
         )
+      
 
         self.update()
+
+        print("trials table and buttons added")
 
     def reset_clicked(self, e):
         self.directory_path.value = None
@@ -190,11 +192,15 @@ class OdorDeliveryApp(UserControl):
         self.check_settings_complete(e)
         self.pick_directory_btn.disabled = False
 
-        if self.trial_table in self.app_layout.controls:
-            self.app_layout.controls.remove(self.trial_table)
+        for control in [
+                self.divider,
+                self.trials_title,
+                self.trial_table,
+                self.randomize_start_buttons,
+            ]:
+            if control in self.app_layout.controls:
+                self.app_layout.controls.remove(control)
 
-        if self.randomize_start_buttons in self.app_layout.controls:
-            self.app_layout.controls.remove(self.randomize_start_buttons)
 
         self.update()
 
@@ -231,10 +237,6 @@ class OdorDeliveryApp(UserControl):
 
         self.save_solenoid_info()
 
-        # self.exp_progress_layout = Container()
-        # self.exp_progress_layout = ExperimentProgressLayout(
-        #     self.page, self.settings_dict, self.trial_table.trials
-        # )
 
         self.exp_progress_layout = ArduinoSession(
             self.page,
@@ -247,11 +249,6 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.update()
-
-
-
-        # self.exp_progress_layout.get_arduino_layout()
-
 
         self.exp_progress_layout.generate_arduino_str()
 
