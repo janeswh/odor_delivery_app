@@ -47,7 +47,9 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.trial_table = None
-        self.divider = ft.Divider()
+        self.divider1 = ft.Divider()
+        self.divider2 = ft.Divider()
+        self.arduino_session = None
         self.make_app_layout()
 
         self.page.update()
@@ -172,7 +174,7 @@ class OdorDeliveryApp(UserControl):
 
         self.app_layout.controls.extend(
             [
-                self.divider,
+                self.divider1,
                 self.trials_title,
                 self.trial_table,
                 self.randomize_start_buttons,
@@ -185,6 +187,7 @@ class OdorDeliveryApp(UserControl):
 
     def reset_clicked(self, e):
         self.directory_path.value = None
+        self.settings_dict = None
         self.randomize_option.value = True
         self.randomize_option.disabled = False
         self.settings_fields.reset_settings_clicked(e)
@@ -192,10 +195,13 @@ class OdorDeliveryApp(UserControl):
         self.pick_directory_btn.disabled = False
 
         for control in [
-            self.divider,
+            self.divider1,
             self.trials_title,
             self.trial_table,
             self.randomize_start_buttons,
+            self.divider2,
+            self.progress_title,
+            self.arduino_session,
         ]:
             if control in self.app_layout.controls:
                 self.app_layout.controls.remove(control)
@@ -242,11 +248,35 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.app_layout.controls.extend(
-            [ft.Divider(), self.progress_title, self.arduino_session]
+            [self.divider2, self.progress_title, self.arduino_session]
         )
 
         self.update()
+        # self.start_arduino_session()
+        self.fake_arduino_session()
 
+    def fake_arduino_session(self):
+        self.arduino_session.generate_arduino_str_test()
+
+        self.arduino_session.save_solenoid_timings()
+
+        timings_name = (
+            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
+        )
+
+        self.page.snack_bar.content.value = (
+            f"Solenoid timings "
+            f"saved to "
+            f"{timings_name} in "
+            f"experiment "
+            f"directory."
+        )
+        self.page.snack_bar.open = True
+        self.page.update()
+
+        self.prompt_new_exp()
+
+    def start_arduino_session(self):
         if self.arduino_session.trig_signal is False:
             while (
                 self.arduino_session.trig_signal is False
@@ -264,7 +294,13 @@ class OdorDeliveryApp(UserControl):
                         f"{self.roi}_solenoid_timings.csv"
                     )
 
-                    self.page.snack_bar.content.value = f"Solenoid timings saved to {timings_name} in experiment directory."
+                    self.page.snack_bar.content.value = (
+                        f"Solenoid timings "
+                        f"saved to "
+                        f"{timings_name} in "
+                        f"experiment "
+                        f"directory."
+                    )
                     self.page.snack_bar.open = True
                     self.page.update()
 
@@ -289,21 +325,28 @@ class OdorDeliveryApp(UserControl):
             title=Text("Odor delivery completed."),
             content=Text("Reset settings for new experiment?"),
             actions=[
-                # ft.TextButton("Yes", on_click=lambda: self.close_dlg(reset=True)),
-                ft.TextButton("Yes", on_click=self.close_dlg),
+                ft.TextButton(
+                    # "Yes", on_click=lambda x: self.close_dlg(reset=True)
+                    "Yes",
+                    on_click=self.new_exp_clicked,
+                ),
+                # ft.TextButton("Yes", on_click=self.close_dlg),
                 ft.TextButton("No", on_click=self.close_dlg),
             ],
         )
         self.page.dialog = self.exp_fin_dlg
         self.exp_fin_dlg.open = True
         self.page.update()
-        print("dialog should open")
 
-    def close_dlg(self, e, reset=False):
-        if reset is True:
-            self.reset_clicked(e)
+    def close_dlg(self, e):
         self.exp_fin_dlg.open = False
+        self.reset_settings_btn.disabled = False
+        self.update()
         self.page.update()
+
+    def new_exp_clicked(self, e):
+        self.reset_clicked(e)
+        self.close_dlg(e)
 
     def save_solenoid_info(self):
         csv_name = (

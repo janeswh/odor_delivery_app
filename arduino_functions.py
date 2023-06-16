@@ -60,7 +60,7 @@ class ArduinoSession(UserControl):
         self.time_scope_TTL = []
 
         # self.generate_arduino_str()
-        self.open_port()
+        # self.open_port()
         self.update()
 
     def open_port(self):
@@ -319,6 +319,64 @@ class ArduinoSession(UserControl):
         # st.info("Experiment finished.")
         # else:
         # st.info("Already finished.")
+
+    def generate_arduino_str_test(self):
+        """
+        Generates arduino execution strs in format "x, y, z" where
+        x = solenoid number
+        y = odor duration (s)
+        z = time between odors (s)
+        """
+        self.trig_signal = True  # for testing only
+        if self.trig_signal == True:
+            for trial in range(len(self.solenoid_order)):
+                if trial == 0:
+                    self.progress_bar_text.value = (
+                        f"Press Start on Thor Images to start Trial {trial+1}/"
+                        f"{len(self.solenoid_order)}"
+                    )
+                else:
+                    self.progress_bar_text.value = (
+                        f"Executing Trial {trial+1}/"
+                        f"{len(self.solenoid_order)}"
+                    )
+                self.progress_bar.value = trial * (
+                    1 / len(self.solenoid_order)
+                )
+                self.update()
+                print(f"doing trial {trial+1}")
+
+                to_be_sent = (
+                    # f"{solenoid},{self.acq_params.odor_duration},"
+                    f"{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
+                    f"{self.acq_params['time_btw_odors']}"
+                )
+
+                self.sent = 1
+
+                # Send the information to arduino and wait for something to come back
+                # st.session_state.arduino.write(to_be_sent.encode())
+                # self.arduino.write(to_be_sent.encode())
+
+                while self.sent == 1:
+                    self.parse_arduino_msg_test(
+                        trial,
+                        self.solenoid_order[trial],
+                    )
+
+                    # # Mark end after last trial
+                    # if trial + 1 == len(bar):
+                    self.update()
+
+            self.sequence_complete = True
+            self.trig_signal = False
+            self.progress_bar.value = len(self.solenoid_order) * (
+                1 / len(self.solenoid_order)
+            )
+
+            self.progress_bar_text.value = "Odor delivery sequence complete."
+            # self.close_port()
+            self.update()
 
     def save_solenoid_timings(self):
         """
