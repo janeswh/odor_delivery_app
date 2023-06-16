@@ -252,8 +252,8 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.update()
-        # self.start_arduino_session()
-        self.fake_arduino_session()
+        self.start_arduino_session()
+        # self.fake_arduino_session()
 
     def fake_arduino_session(self):
         self.arduino_session.generate_arduino_str_test()

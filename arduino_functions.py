@@ -60,7 +60,7 @@ class ArduinoSession(UserControl):
         self.time_scope_TTL = []
 
         # self.generate_arduino_str()
-        # self.open_port()
+        self.open_port()
         self.update()
 
     def open_port(self):
