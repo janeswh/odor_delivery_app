@@ -372,7 +372,7 @@ def resetDIYTrialOdors(data):
 # Initiate the Arduino
 ########################################################
 arduino = serial.Serial()
-arduino.port = "COM8"  # Change COM PORT if COMPort error occurs
+arduino.port = "COM7"  # Change COM PORT if COMPort error occurs
 arduino.baudrate = 9600
 arduino.timeout = 2
 arduino.setRTS(FALSE)
