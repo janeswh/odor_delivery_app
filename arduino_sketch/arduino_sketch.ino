@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 /* Written by Beichen Liu for Dr. Claire Cheetham's Lab
  *  Uses millis() to keep track of time for odor release and delay times
  *  1000 ms = 1s
@@ -133,7 +131,7 @@ void checkTrigger() {
   ardTrigger = 0; //reset checkTrigger -- should wait for a trigger before each odor delivery
   if (ardTrigger == 0){
     while (ardTrigger == 0){
-      delay(100); //100 ms delay between reading trigger
+      delay(50); //100 ms delay between reading trigger
       receivedSignal = digitalRead(analogInPin);
       //Serial.println("current signal = ");
       //Serial.print(receivedSignal);
@@ -155,6 +153,24 @@ void checkTrigger() {
     }
   }
 }
+
+void newcheckTrigger() {
+  ardTrigger = 0; //reset checkTrigger -- should wait for a trigger before each odor delivery
+  if (ardTrigger == 0){
+    while (ardTrigger == 0){
+      delay(50); //100 ms delay between reading trigger
+      Serial.println("no scope signal");
+      receivedSignal = digitalRead(analogInPin);
+
+     
+      if (receivedSignal == 1){
+          ardTrigger = 1;
+          Serial.println("scope signal received");
+        }
+      }
+
+      }
+    }
 
 //executes the solenoid order
 void executeSolenoids() {
@@ -179,7 +195,7 @@ void executeSolenoids() {
     if (pinSet > 1){
       //delayedFirstOdor += 1;
       //Serial.println(delayedFirstOdor);
-      checkTrigger(); //wait for microscope trigger
+      newcheckTrigger(); //wait for microscope trigger
       Serial.println("9"); //tells python when the microscope has been triggered
       digitalWrite(microscopeTrigger, HIGH); //trigger the microscope
       delay(100);
