@@ -235,31 +235,50 @@ class OdorDeliveryApp(UserControl):
 
         self.save_solenoid_info()
 
-        self.exp_progress_layout = ArduinoSession(
+        self.arduino_session = ArduinoSession(
             self.page,
             self.settings_dict,
             self.trial_table.trials,
         )
 
         self.app_layout.controls.extend(
-            [ft.Divider(), self.progress_title, self.exp_progress_layout]
+            [ft.Divider(), self.progress_title, self.arduino_session]
         )
 
         self.update()
 
-        self.exp_progress_layout.generate_arduino_str()
+        if self.arduino_session.trig_signal is False:
+            while (
+                self.arduino_session.trig_signal is False
+                and self.arduino_session.sequence_complete is False
+            ):
+                arduino_msg = self.arduino_session.get_arduino_msg()
+                if "y" in arduino_msg:
+                    print("Arduino is conencted")
+                    self.arduino_session.trig_signal = True
+                    self.arduino_session.generate_arduino_str()
+                    self.arduino_session.save_solenoid_timings()
 
-        self.exp_progress_layout.save_solenoid_timings()
+                    timings_name = (
+                        f"{self.date}_{self.animal_id}_ROI"
+                        f"{self.roi}_solenoid_timings.csv"
+                    )
 
-        timings_name = (
-            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
-        )
+                    self.page.snack_bar.content.value = f"Solenoid timings saved to {timings_name} in experiment directory."
+                    self.page.snack_bar.open = True
+                    self.page.update()
 
-        self.page.snack_bar.content.value = f"Solenoid timings saved to {timings_name} in experiment directory."
-        self.page.snack_bar.open = True
-        self.page.update()
+                    self.arduino_session.trig_signal = False
+                    self.prompt_new_exp()
+                else:
+                    pass
 
-        self.prompt_new_exp()
+        if (
+            self.arduino_session.trig_signal is False
+            and self.arduino_session.sequence_complete is True
+        ):
+            self.arduino_session.close_port()
+            print("arduino closed")
 
     def prompt_new_exp(self):
         """

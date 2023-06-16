@@ -60,6 +60,7 @@ class ArduinoSession(UserControl):
         self.time_scope_TTL = []
 
         # self.generate_arduino_str()
+        self.open_port()
         self.update()
 
     def open_port(self):
@@ -75,6 +76,7 @@ class ArduinoSession(UserControl):
 
         self.arduino.open()
         self.port_opened = True
+        self.progress_bar_text.value = "Arduino port opened."
 
     def close_port(self):
         """
@@ -89,7 +91,7 @@ class ArduinoSession(UserControl):
         """
         if self.arduino.isOpen():
             sent_info = self.arduino.readline().strip()
-            arduino_msg = self.sent_info.decode("utf-8")
+            arduino_msg = sent_info.decode("utf-8")
         else:
             arduino_msg = None
 
@@ -170,6 +172,7 @@ class ArduinoSession(UserControl):
         timestamps. Prints the info into placeholder textbox
         """
         arduino_msg = self.get_arduino_msg()
+        print(arduino_msg)
 
         # Update: check if y is anywhere in the messageReceived in case
         # arduino sends too many at once
@@ -261,7 +264,8 @@ class ArduinoSession(UserControl):
         y = odor duration (s)
         z = time between odors (s)
         """
-        self.trig_signal = True  # for testing only
+        # self.trig_signal = True  # for testing only
+        print("generate_arduino_str called")
         if self.trig_signal == True:
             for trial in range(len(self.solenoid_order)):
                 if trial == 0:
@@ -309,7 +313,7 @@ class ArduinoSession(UserControl):
             )
 
             self.progress_bar_text.value = "Odor delivery sequence complete."
-
+            self.close_port()
             self.update()
 
         # st.info("Experiment finished.")
