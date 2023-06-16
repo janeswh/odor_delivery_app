@@ -21,7 +21,6 @@ from trial_order import TrialOrderTable
 from arduino_functions import ArduinoSession
 
 
-
 class OdorDeliveryApp(UserControl):
     def __init__(self, page: Page):
         super().__init__()
@@ -29,6 +28,7 @@ class OdorDeliveryApp(UserControl):
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text("Snack bar init"), bgcolor=ft.colors.SECONDARY
         )
+
         self.directory_path = Text(col={"sm": 8})
 
         self.get_directory_dialog = FilePicker(
@@ -47,7 +47,7 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.trial_table = None
-        self.divider= ft.Divider()
+        self.divider = ft.Divider()
         self.make_app_layout()
 
         self.page.update()
@@ -178,7 +178,6 @@ class OdorDeliveryApp(UserControl):
                 self.randomize_start_buttons,
             ]
         )
-      
 
         self.update()
 
@@ -193,14 +192,13 @@ class OdorDeliveryApp(UserControl):
         self.pick_directory_btn.disabled = False
 
         for control in [
-                self.divider,
-                self.trials_title,
-                self.trial_table,
-                self.randomize_start_buttons,
-            ]:
+            self.divider,
+            self.trials_title,
+            self.trial_table,
+            self.randomize_start_buttons,
+        ]:
             if control in self.app_layout.controls:
                 self.app_layout.controls.remove(control)
-
 
         self.update()
 
@@ -237,7 +235,6 @@ class OdorDeliveryApp(UserControl):
 
         self.save_solenoid_info()
 
-
         self.exp_progress_layout = ArduinoSession(
             self.page,
             self.settings_dict,
@@ -252,19 +249,42 @@ class OdorDeliveryApp(UserControl):
 
         self.exp_progress_layout.generate_arduino_str()
 
-
         self.exp_progress_layout.save_solenoid_timings()
 
         timings_name = (
             f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
         )
 
-        self.page.snack_bar.content.value = (
-            f"Solenoid timings saved to {timings_name} in experiment directory."
-        )
+        self.page.snack_bar.content.value = f"Solenoid timings saved to {timings_name} in experiment directory."
         self.page.snack_bar.open = True
         self.page.update()
 
+        self.prompt_new_exp()
+
+    def prompt_new_exp(self):
+        """
+        Shows dialog informing user that experiment has finished.
+        """
+        self.exp_fin_dlg = ft.AlertDialog(
+            modal=True,
+            title=Text("Odor delivery completed."),
+            content=Text("Reset settings for new experiment?"),
+            actions=[
+                # ft.TextButton("Yes", on_click=lambda: self.close_dlg(reset=True)),
+                ft.TextButton("Yes", on_click=self.close_dlg),
+                ft.TextButton("No", on_click=self.close_dlg),
+            ],
+        )
+        self.page.dialog = self.exp_fin_dlg
+        self.exp_fin_dlg.open = True
+        self.page.update()
+        print("dialog should open")
+
+    def close_dlg(self, e, reset=False):
+        if reset is True:
+            self.reset_clicked(e)
+        self.exp_fin_dlg.open = False
+        self.page.update()
 
     def save_solenoid_info(self):
         csv_name = (

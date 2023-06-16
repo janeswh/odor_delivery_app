@@ -24,10 +24,10 @@ class ArduinoSession(UserControl):
         self.acq_params = settings
         self.solenoid_order = odor_sequence
 
-        self.date = settings['date']
-        self.animal_id = settings['mouse']
-        self.roi = settings['roi']
-        self.directory_path = settings['dir_path']
+        self.date = settings["date"]
+        self.animal_id = settings["mouse"]
+        self.roi = settings["roi"]
+        self.directory_path = settings["dir_path"]
 
         # Progress bar
         self.progress_bar = ft.ProgressBar(width=600)
@@ -35,11 +35,9 @@ class ArduinoSession(UserControl):
         self.progress_bar_text = Text()
         self.pb_column = Column([self.progress_bar_text, self.progress_bar])
 
-
         # Plateholder container for arduino progress msgs
         # self.arduino_step_text = Text("Initial arduino step progress")
         self.arduino_step_text = Text()
-
 
         self.port_opened = False
         self.trig_signal = False  # Whether Arduino has triggered microscope
@@ -97,23 +95,19 @@ class ArduinoSession(UserControl):
 
         return arduino_msg
 
-    def parse_arduino_msg(self, trial, solenoid):
+    def parse_arduino_msg_test(self, trial, solenoid):
         """
-        Translates the message sent back from arduino into informative
-        timestamps. Prints the info into placeholder textbox
+        Test version without actual arduino input
         """
-        # arduino_msg_received = self.get_arduino_msg()
-        # arduino_msg = self.get_arduino_msg()
-
-        # Testing without Arduino
-
         time_TTL = datetime.datetime.now().isoformat(
             "|", timespec="milliseconds"
         )
         self.time_scope_TTL.append(time_TTL)
 
-        self.arduino_step_text.value = (f"trial {trial+1}, odor "
-        f"{solenoid} microscope triggered at {time_TTL}")
+        self.arduino_step_text.value = (
+            f"trial {trial+1}, odor "
+            f"{solenoid} microscope triggered at {time_TTL}"
+        )
 
         print(
             f"trial {trial+1}, odor {solenoid} microscope triggered at "
@@ -127,8 +121,10 @@ class ArduinoSession(UserControl):
             "|", timespec="milliseconds"
         )
         self.time_solenoid_on.append(time_solenoid_on)
-        self.arduino_step_text.value = (f"trial {trial+1}, odor "
-        f"{solenoid} released at {time_solenoid_on}")
+        self.arduino_step_text.value = (
+            f"trial {trial+1}, odor "
+            f"{solenoid} released at {time_solenoid_on}"
+        )
 
         print(
             f"trial {trial+1}, odor {solenoid} released at "
@@ -142,8 +138,10 @@ class ArduinoSession(UserControl):
             "|", timespec="milliseconds"
         )
         self.time_solenoid_off.append(time_solenoid_off)
-        self.arduino_step_text.value = (f"trial {trial+1}, odor "
-        f"{solenoid} stopped at {time_solenoid_off}")
+        self.arduino_step_text.value = (
+            f"trial {trial+1}, odor "
+            f"{solenoid} stopped at {time_solenoid_off}"
+        )
 
         print(
             f"trial {trial+1}, odor {solenoid} stopped at "
@@ -153,8 +151,10 @@ class ArduinoSession(UserControl):
         self.update()
         time.sleep(1)
 
-        self.arduino_step_text.value = (f"trial {trial+1}, odor "
-        f"{solenoid} delay stopped, send next solenoid info")
+        self.arduino_step_text.value = (
+            f"trial {trial+1}, odor "
+            f"{solenoid} delay stopped, send next solenoid info"
+        )
 
         print(
             f"trial {trial+1}, odor {solenoid} delay stopped, send next "
@@ -164,78 +164,95 @@ class ArduinoSession(UserControl):
         self.sent = 0
         self.update()
 
-        # # Update: check if y is anywhere in the messageReceived in case arduino sends too many at once
-        # if arduino_msg is None or "y" in arduino_msg:
-        #     pass
+    def parse_arduino_msg(self, trial, solenoid):
+        """
+        Translates the message sent back from arduino into informative
+        timestamps. Prints the info into placeholder textbox
+        """
+        arduino_msg = self.get_arduino_msg()
 
-        # else:
-        #     if arduino_msg == "9":
-        #         # Time when microscope has been triggered via TTL
-        #         time_TTL = datetime.datetime.now().isoformat(
-        #             "|", timespec="milliseconds"
-        #         )
-        #         self.time_scope_TTL.append(time_TTL)
+        # Update: check if y is anywhere in the messageReceived in case
+        # arduino sends too many at once
+        if arduino_msg is None or "y" in arduino_msg:
+            pass
 
-        #         self.arduino_step_text.value = f"trial {trial+1}, odor "
-        #         f"{solenoid} microscope triggered at {time_TTL}"
+        else:
+            if arduino_msg == "9":
+                # Time when microscope has been triggered via TTL
+                time_TTL = datetime.datetime.now().isoformat(
+                    "|", timespec="milliseconds"
+                )
+                self.time_scope_TTL.append(time_TTL)
 
-        #         print(
-        #             f"trial {trial+1}, odor {solenoid} microscope triggered at "
-        #             f"{time_TTL}"
-        #         )
+                self.arduino_step_text.value = (
+                    f"trial {trial+1}, odor "
+                    f"{solenoid} microscope triggered at {time_TTL}"
+                )
 
-        #     elif arduino_msg == "1":
-        #         time_solenoid_on = datetime.datetime.now().isoformat(
-        #             "|", timespec="milliseconds"
-        #         )
-        #         self.time_solenoid_on.append(time_solenoid_on)
-        #         self.arduino_step_text.value = f"trial {trial+1}, odor "
-        #         f"{solenoid} released at {time_solenoid_on}"
+                print(
+                    f"trial {trial+1}, odor {solenoid} microscope triggered at "
+                    f"{time_TTL}"
+                )
 
-        #         print(
-        #             f"trial {trial+1}, odor {solenoid} released at "
-        #             f"{time_solenoid_on}"
-        #         )
+            elif arduino_msg == "1":
+                time_solenoid_on = datetime.datetime.now().isoformat(
+                    "|", timespec="milliseconds"
+                )
+                self.time_solenoid_on.append(time_solenoid_on)
+                self.arduino_step_text.value = (
+                    f"trial {trial+1}, odor "
+                    f"{solenoid} released at {time_solenoid_on}"
+                )
 
-        #     elif arduino_msg == "2":
-        #         time_solenoid_off = datetime.datetime.now().isoformat(
-        #             "|", timespec="milliseconds"
-        #         )
-        #         self.time_solenoid_off.append(time_solenoid_off)
-        #         self.arduino_step_text.value = f"trial {trial+1}, odor "
-        #         f"{solenoid} stopped at {time_solenoid_off}"
+                print(
+                    f"trial {trial+1}, odor {solenoid} released at "
+                    f"{time_solenoid_on}"
+                )
 
-        #         print(
-        #             f"trial {trial+1}, odor {solenoid} stopped at "
-        #             f"{time_solenoid_off}"
-        #         )
+            elif arduino_msg == "2":
+                time_solenoid_off = datetime.datetime.now().isoformat(
+                    "|", timespec="milliseconds"
+                )
+                self.time_solenoid_off.append(time_solenoid_off)
+                self.arduino_step_text.value = (
+                    f"trial {trial+1}, odor "
+                    f"{solenoid} stopped at {time_solenoid_off}"
+                )
 
-        #     elif arduino_msg == "3":
-        #         self.arduino_step_text.value = f"trial {trial+1}, odor "
-        #         f"{solenoid} delay stopped, send next solenoid info"
+                print(
+                    f"trial {trial+1}, odor {solenoid} stopped at "
+                    f"{time_solenoid_off}"
+                )
 
-        #         print(
-        #             f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-        #             "solenoid info"
-        #         )
+            elif arduino_msg == "3":
+                self.arduino_step_text.value = (
+                    f"trial {trial+1}, odor "
+                    f"{solenoid} delay stopped, send next solenoid info"
+                )
 
-        #         # if trial + 1 != self.num_trials:
-        #         #     placeholder.info(
-        #         #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-        #         #         "solenoid info"
-        #         #     )
+                print(
+                    f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                    "solenoid info"
+                )
 
-        #         #     print(
-        #         #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-        #         #         "solenoid info"
-        #         #     )
-        #         # else:
-        #         #     placeholder.info("Odor delivery sequence complete.")
-        #         #     self.sequence_complete = True
+                # if trial + 1 != self.num_trials:
+                #     placeholder.info(
+                #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                #         "solenoid info"
+                #     )
 
-        #         self.sent = 0
+                #     print(
+                #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                #         "solenoid info"
+                #     )
+                # else:
+                #     placeholder.info("Odor delivery sequence complete.")
+                #     self.sequence_complete = True
 
-        # self.update()
+                self.sent = 0
+            self.update()
+
+        self.update()
 
     def generate_arduino_str(self):
         """
@@ -246,10 +263,17 @@ class ArduinoSession(UserControl):
         """
         self.trig_signal = True  # for testing only
         if self.trig_signal == True:
-
             for trial in range(len(self.solenoid_order)):
-                self.progress_bar_text.value = (f"Executing Trial {trial+1}/"
-                                                f"{len(self.solenoid_order)}")
+                if trial == 0:
+                    self.progress_bar_text.value = (
+                        f"Press Start on Thor Images to start Trial {trial+1}/"
+                        f"{len(self.solenoid_order)}"
+                    )
+                else:
+                    self.progress_bar_text.value = (
+                        f"Executing Trial {trial+1}/"
+                        f"{len(self.solenoid_order)}"
+                    )
                 self.progress_bar.value = trial * (
                     1 / len(self.solenoid_order)
                 )
@@ -266,7 +290,7 @@ class ArduinoSession(UserControl):
 
                 # Send the information to arduino and wait for something to come back
                 # st.session_state.arduino.write(to_be_sent.encode())
-                # self.arduino.write(to_be_sent.encode())
+                self.arduino.write(to_be_sent.encode())
 
                 while self.sent == 1:
                     self.parse_arduino_msg(
@@ -281,8 +305,8 @@ class ArduinoSession(UserControl):
             self.sequence_complete = True
             self.trig_signal = False
             self.progress_bar.value = len(self.solenoid_order) * (
-                    1 / len(self.solenoid_order)
-                )
+                1 / len(self.solenoid_order)
+            )
 
             self.progress_bar_text.value = "Odor delivery sequence complete."
 
@@ -314,8 +338,6 @@ class ArduinoSession(UserControl):
         )
 
         timings_df.to_csv(path, index=False)
-
-
 
     def build(self):
         self.arduino_layout = Container(
