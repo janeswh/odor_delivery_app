@@ -73,7 +73,7 @@ class OdorDeliveryApp(UserControl):
 
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
         self.page.window_width = 600
-        self.page.window_height = 800
+        self.page.window_height = 850
         self.page.window_resizable = False
         self.pick_directory_layout = ft.ResponsiveRow(
             [
@@ -411,10 +411,22 @@ class OdorDeliveryApp(UserControl):
 
     def show_output_log(self, e):
         """"""
-        if self.arduino_session.output_log in self.app_layout.controls:
-            self.app_layout.controls.remove(self.arduino_session.output_log)
+        # if self.arduino_session.output_log in self.app_layout.controls:
+        #     self.app_layout.controls.remove(self.arduino_session.output_log)
+        # else:
+        #     self.app_layout.controls.append(self.arduino_session.output_log)
+
+        if (
+            self.arduino_session.output_log
+            in self.arduino_session.arduino_layout.content.controls
+        ):
+            self.arduino_session.arduino_layout.content.controls.remove(
+                self.arduino_session.output_log
+            )
         else:
-            self.app_layout.controls.append(self.arduino_session.output_log)
+            self.arduino_session.arduino_layout.content.controls.append(
+                self.arduino_session.output_log
+            )
 
         self.update()
 

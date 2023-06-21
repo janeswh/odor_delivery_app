@@ -280,11 +280,11 @@ class ArduinoSession(UserControl):
         self.update()
 
     def update_log(self, trial, odor, step, isotime):
-        if isotime is not None:
+        if step != "3":
             time_obj = datetime.datetime.fromisoformat(isotime)
             time = time_obj.strftime("%H:%M:%S")
         else:
-            time = None
+            time = datetime.datetime.now().strftime("%H:%M:%S")
         step_text_dict = {
             "9": f"microscope triggered",
             "1": f"released",
@@ -292,14 +292,19 @@ class ArduinoSession(UserControl):
             "3": f"delay finished, send next solenoid info.",
         }
 
-        if step == "3":
-            new_text = f"Trial {trial}, Odor {odor} {step_text_dict[step]}"
-        else:
-            new_text = (
-                f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
-            )
+        # if step == "3":
+        #     new_text = f"Trial {trial}, Odor {odor} {step_text_dict[step]}"
+        # else:
+        #     new_text = (
+        #         f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
+        #     )
 
-        self.output_log.value = self.output_log.value + "\n" + new_text
+        new_text = f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
+
+        if trial == 1 and step == "9":
+            self.output_log.value = new_text
+        else:
+            self.output_log.value = self.output_log.value + "\n" + new_text
 
         self.update
 
