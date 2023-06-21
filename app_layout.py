@@ -111,12 +111,20 @@ class OdorDeliveryApp(UserControl):
         self.directory_path.update()
         self.check_settings_complete()
 
-    def save_clicked(self, e):
-        now_date = datetime.datetime.now()
+    def get_session_info(self):
+        folder = os.path.basename(self.directory_path.value)
+        self.date = folder.split("--")[0]
+        self.animal_id = folder.split("--")[1].split("_")[0]
+        self.roi = folder.split("_")[1]
 
-        self.animal_id = self.settings_fields.animal_id.text_field.value
-        self.roi = self.settings_fields.roi.text_field.value
-        self.date = now_date.strftime("%y%m%d")
+    def save_clicked(self, e):
+        # now_date = datetime.datetime.now()
+        self.get_session_info()
+
+        # self.animal_id = self.settings_fields.animal_id.text_field.value
+        # self.roi = self.settings_fields.roi.text_field.value
+        # self.date = now_date.strftime("%y%m%d")
+
         self.num_odors = int(self.settings_fields.num_odors.value)
         self.num_trials = int(self.settings_fields.num_trials.text_field.value)
         self.odor_duration = int(
@@ -212,8 +220,8 @@ class OdorDeliveryApp(UserControl):
         if (
             ""
             in [
-                self.settings_fields.animal_id.text_field.value,
-                self.settings_fields.roi.text_field.value,
+                # self.settings_fields.animal_id.text_field.value,
+                # self.settings_fields.roi.text_field.value,
                 self.settings_fields.num_odors.value,
                 self.settings_fields.num_trials.text_field.value,
                 self.settings_fields.odor_duration.text_field.value,
@@ -261,7 +269,7 @@ class OdorDeliveryApp(UserControl):
         self.arduino_session.save_solenoid_timings()
 
         timings_name = (
-            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
         )
 
         self.page.snack_bar.content.value = (
@@ -288,21 +296,6 @@ class OdorDeliveryApp(UserControl):
                     self.arduino_session.trig_signal = True
                     self.arduino_session.generate_arduino_str()
                     self.arduino_session.save_solenoid_timings()
-
-                    timings_name = (
-                        f"{self.date}_{self.animal_id}_ROI"
-                        f"{self.roi}_solenoid_timings.csv"
-                    )
-
-                    self.page.snack_bar.content.value = (
-                        f"Solenoid timings "
-                        f"saved to "
-                        f"{timings_name} in "
-                        f"experiment "
-                        f"directory."
-                    )
-                    self.page.snack_bar.open = True
-                    self.page.update()
 
                     self.arduino_session.trig_signal = False
                     self.prompt_new_exp()
@@ -350,7 +343,7 @@ class OdorDeliveryApp(UserControl):
 
     def save_solenoid_info(self):
         csv_name = (
-            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_order.csv"
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_order.csv"
         )
 
         path = os.path.join(self.directory_path.value, csv_name)

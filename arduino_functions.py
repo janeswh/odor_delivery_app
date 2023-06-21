@@ -381,7 +381,7 @@ class ArduinoSession(UserControl):
         and closed to a .csv file.
         """
         csv_name = (
-            f"{self.date}_{self.animal_id}_ROI{self.roi}_solenoid_timings.csv"
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
         )
         path = os.path.join(self.directory_path, csv_name)
 
@@ -397,6 +397,20 @@ class ArduinoSession(UserControl):
         )
 
         timings_df.to_csv(path, index=False)
+
+        timings_name = (
+            f"{self.date}_{self.animal_id}_" f"{self.roi}_solenoid_timings.csv"
+        )
+
+        self.page.snack_bar.content.value = (
+            f"Solenoid timings "
+            f"saved to "
+            f"{timings_name} in "
+            f"experiment "
+            f"directory."
+        )
+        self.page.snack_bar.open = True
+        self.page.update()
 
     def build(self):
         self.arduino_layout = Container(

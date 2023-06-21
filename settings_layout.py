@@ -18,8 +18,8 @@ class SettingsFields(UserControl):
         self.label = label
 
         self.textfield_dict = {
-            "Animal ID": {"value": ""},
-            "ROI": {"value": ""},
+            # "Animal ID": {"value": ""},
+            # "ROI": {"value": ""},
             "# Trials/odor": {"value": ""},
             "Odor duration (s)": {"value": "1"},
             "Time between odors (s)": {"value": "10"},
@@ -56,13 +56,13 @@ class SettingsLayout(UserControl):
         self.settings_dict = None
         self.saved_click = False
 
-        self.animal_id = SettingsFields(
-            # ref=self.textfield1_ref,
-            label="Animal ID",
-            on_change=check_complete,
-        )
+        # self.animal_id = SettingsFields(
+        #     # ref=self.textfield1_ref,
+        #     label="Animal ID",
+        #     on_change=check_complete,
+        # )
 
-        self.roi = SettingsFields(label="ROI", on_change=check_complete)
+        # self.roi = SettingsFields(label="ROI", on_change=check_complete)
 
         self.num_odors = ft.Dropdown(
             value="",
@@ -87,15 +87,15 @@ class SettingsLayout(UserControl):
 
     def create_settings_fields(self):
         # self.textfield1_ref = Ref[SettingsFields]()
-        self.animal_id = SettingsFields(
-            # ref=self.textfield1_ref,
-            label="Animal ID",
-            on_change=self.check_settings_complete,
-        )
+        # self.animal_id = SettingsFields(
+        #     # ref=self.textfield1_ref,
+        #     label="Animal ID",
+        #     on_change=self.check_settings_complete,
+        # )
 
-        self.roi = SettingsFields(
-            label="ROI", on_change=self.check_settings_complete
-        )
+        # self.roi = SettingsFields(
+        #     label="ROI", on_change=self.check_settings_complete
+        # )
 
         self.num_odors = ft.Dropdown(
             value="",
@@ -118,26 +118,35 @@ class SettingsLayout(UserControl):
 
     # Arranges setting fields in rows
     def arrange_settings_fields(self):
+        # self.row1 = ft.ResponsiveRow(
+        #     [
+        #         Column(col={"sm": 4}, controls=[self.animal_id]),
+        #         Column(col={"sm": 4}, controls=[self.roi]),
+        #         Column(col={"sm": 4}, controls=[self.num_odors]),
+        #     ]
+        # )
+
         self.row1 = ft.ResponsiveRow(
             [
-                Column(col={"sm": 4}, controls=[self.animal_id]),
-                Column(col={"sm": 4}, controls=[self.roi]),
-                Column(col={"sm": 4}, controls=[self.num_odors]),
+                Column(col={"sm": 3}, controls=[self.num_odors]),
+                Column(col={"sm": 3}, controls=[self.num_trials]),
+                Column(col={"sm": 3}, controls=[self.odor_duration]),
+                Column(col={"sm": 3}, controls=[self.time_btw_odors]),
             ]
         )
 
-        self.row2 = ft.ResponsiveRow(
-            [
-                Column(col={"sm": 4}, controls=[self.odor_duration]),
-                Column(col={"sm": 4}, controls=[self.time_btw_odors]),
-                Column(col={"sm": 4}, controls=[self.num_trials]),
-            ]
-        )
+        # self.row2 = ft.ResponsiveRow(
+        #     [
+        #         Column(col={"sm": 4}, controls=[self.odor_duration]),
+        #         Column(col={"sm": 4}, controls=[self.time_btw_odors]),
+        #         Column(col={"sm": 4}, controls=[self.num_trials]),
+        #     ]
+        # )
 
     def reset_settings_clicked(self, e):
         self.settings_dict = None
-        self.animal_id.reset()
-        self.roi.reset()
+        # self.animal_id.reset()
+        # self.roi.reset()
         self.num_odors.value = ""
         self.num_trials.reset()
         self.odor_duration.reset()
@@ -148,8 +157,8 @@ class SettingsLayout(UserControl):
         self.update()
 
     def disable_settings_fields(self, disable):
-        self.animal_id.disabled = disable
-        self.roi.disabled = disable
+        # self.animal_id.disabled = disable
+        # self.roi.disabled = disable
         self.num_odors.disabled = disable
         self.num_trials.disabled = disable
         self.odor_duration.disabled = disable
@@ -161,6 +170,6 @@ class SettingsLayout(UserControl):
         return ft.Column(
             controls=[
                 self.row1,
-                self.row2,
+                # self.row2,
             ],
         )
