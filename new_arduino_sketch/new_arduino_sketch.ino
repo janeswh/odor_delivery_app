@@ -209,13 +209,12 @@ void checkTrigger() {
   if (ardTrigger == 0){
     while (ardTrigger == 0){
       delay(10); //100 ms delay between reading trigger
-      // Serial.println("no scope signal");
       receivedSignal = digitalRead(analogInPin);
 
      
       if (receivedSignal == 1){
           ardTrigger = 1;
-          // Serial.println("scope signal received");
+
         }
       }
 
@@ -225,105 +224,9 @@ void checkTrigger() {
 
 //============
 
-//executes the solenoid order
-void executeSolenoids() {
-  if (Serial.available()>1){ //check if there is input available
-    Serial.println("Serial is available");
-    pinSet = Serial.parseInt()+1; //get the pin to output
-    odorSec = Serial.parseInt();
-    delaySec = Serial.parseInt()-1;
-    Serial.print("pinSet is");
-    Serial.println(pinSet);
-    odorTime = (odorSec)*1000L; //convert seconds to milliseconds, L after 1000 to indicate unsigned long and needed for delays longer than 30s because of the way arduino handles numbers in 8-bit
-    delayTime = (delaySec)*1000L-(delayMicroscopeTrigger+100)-triggerTime; //convert to milliseconds, but subtract the time it needs to trigger the microscope (100 milliseconds) and establish the baseline (4000ms)
+void executeSolenoid() {
 
-    if (pinSet > 1){
-      checkTrigger(); //wait for microscope trigger
-      Serial.println("9"); //tells python when the microscope has been triggered
-      digitalWrite(microscopeTrigger, HIGH); //trigger the microscope
-      delay(100);
-      digitalWrite(microscopeTrigger, LOW); 
-      delayMillis(); //wait 4 seconds after the microscope has been triggered to establish baseline
-      Serial.println("1"); //tells python the odor has been released
-      odorOn(); //releases the odor for a certain time
-      Serial.println("2"); //tells python the odor has been stopped
-      delayOn(); //delay occurs after the odor
-      Serial.println("3"); //tells python the delay has been finished, to send the next set of numbers
-    }
-  }
-  else {
-    ardTrigger = 0;
-  }
-}
-
-//============
-
-void newexecuteSolenoids() {
-  recvWithStartEndMarkers();
-  if (newData == true) {
-    strcpy(tempChars, receivedChars);
-            // this temporary copy is necessary to protect the original data
-            //   because strtok() used in parseData() replaces the commas with \0
-    parseData();
-    showParsedData();
-    newData = false;
-
-    odorTime = (odorSec)*1000L; //convert seconds to milliseconds, L after 1000 to indicate unsigned long and needed for delays longer than 30s because of the way arduino handles numbers in 8-bit
-    delayTime = (delaySec)*1000L-(delayMicroscopeTrigger+100)-triggerTime; //convert to milliseconds, but subtract the time it needs to trigger the microscope (100 milliseconds) and establish the baseline (4000ms)
-  }
-
-  if (pinSet > 1){
-    checkTrigger(); //wait for microscope trigger
-    Serial.println("9"); //tells python when the microscope has been triggered
-    digitalWrite(microscopeTrigger, HIGH); //trigger the microscope
-    delay(100);
-    digitalWrite(microscopeTrigger, LOW); 
-    delayMillis(); //wait 4 seconds after the microscope has been triggered to establish baseline
-    Serial.println("1"); //tells python the odor has been released
-    odorOn(); //releases the odor for a certain time
-    Serial.println("2"); //tells python the odor has been stopped
-    delayOn(); //delay occurs after the odor
-    Serial.println("3"); //tells python the delay has been finished, to send the next set of numbers
-  }
-  
-  else {
-    ardTrigger = 0;
-  }
-}
-
-
-//============
-
-void newexecuteSolenoid2() {
-    static boolean recvInProgress = false;
-    static byte ndx = 0;
-    char startMarker = '<';
-    char endMarker = '>';
-    char rc;
-
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (recvInProgress == true) {
-            if (rc != endMarker) {
-                receivedChars[ndx] = rc;
-                ndx++;
-                if (ndx >= numChars) {
-                    ndx = numChars - 1;
-                }
-            }
-            else {
-                receivedChars[ndx] = '\0'; // terminate the string
-                recvInProgress = false;
-                ndx = 0;
-                newData = true;
-            }
-        }
-
-        else if (rc == startMarker) {
-            recvInProgress = true;
-        }
-    }
+    recvWithStartEndMarkers();
 
     if (newData == true) {
         strcpy(tempChars, receivedChars);
@@ -357,9 +260,6 @@ void newexecuteSolenoid2() {
 //============
 
 void loop() {
-  // delay(50);
-  // Serial.println(Serial.available());
   Serial.println("y"); //tells python that the arduino is connected and running
-  newexecuteSolenoid2(); //run the code
-  // executeSolenoids();
+  executeSolenoid(); //run the code
 }
