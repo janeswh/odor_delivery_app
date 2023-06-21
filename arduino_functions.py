@@ -1,10 +1,5 @@
 import flet as ft
-from flet import (
-    UserControl,
-    Column,
-    Container,
-    Text,
-)
+from flet import UserControl, Column, Container, Text, TextField
 
 import datetime
 import serial
@@ -34,6 +29,14 @@ class ArduinoSession(UserControl):
         # Progress bar text
         self.progress_bar_text = Text()
         self.pb_column = Column([self.progress_bar_text, self.progress_bar])
+        self.output_log = TextField(
+            label="Script output log",
+            multiline=True,
+            max_lines=4,
+            min_lines=3,
+            read_only=True,
+            value="",
+        )
 
         # Plateholder container for arduino progress msgs
         # self.arduino_step_text = Text("Initial arduino step progress")
@@ -116,6 +119,11 @@ class ArduinoSession(UserControl):
             f"{time_TTL}"
         )
 
+        self.output_log.value = (
+            self.output_log.value + "\n" + self.arduino_step_text.value
+        )
+        print(f"output log value is {self.output_log.value}")
+
         self.update()
         time.sleep(1)
 
@@ -132,6 +140,11 @@ class ArduinoSession(UserControl):
             f"trial {trial+1}, odor {solenoid} released at "
             f"{time_solenoid_on}"
         )
+
+        self.output_log.value = (
+            self.output_log.value + "\n" + self.arduino_step_text.value
+        )
+        print(f"output log value is {self.output_log.value}")
 
         self.update()
         time.sleep(1)
@@ -150,6 +163,11 @@ class ArduinoSession(UserControl):
             f"{time_solenoid_off}"
         )
 
+        self.output_log.value = (
+            self.output_log.value + "\n" + self.arduino_step_text.value
+        )
+        print(f"output log value is {self.output_log.value}")
+
         self.update()
         time.sleep(1)
 
@@ -163,6 +181,11 @@ class ArduinoSession(UserControl):
             "solenoid info"
         )
 
+        self.output_log.value = (
+            self.arduino_step_text.value + "\n" + self.output_log.value
+        )
+        print(f"output log value is {self.output_log.value}")
+
         self.sent = 0
         self.update()
 
@@ -173,6 +196,7 @@ class ArduinoSession(UserControl):
         """
         arduino_msg = self.get_arduino_msg()
         print(arduino_msg)
+        # self.arduino_step_text.value = ""
 
         # Update: check if y is anywhere in the messageReceived in case
         # arduino sends too many at once
@@ -200,6 +224,10 @@ class ArduinoSession(UserControl):
                     f"{time_TTL}"
                 )
 
+                self.output_log.value = (
+                    self.output_log.value + "\n" + self.arduino_step_text.value
+                )
+
             elif arduino_msg == "1":
                 time_solenoid_on = datetime.datetime.now().isoformat(
                     "|", timespec="milliseconds"
@@ -213,6 +241,10 @@ class ArduinoSession(UserControl):
                 print(
                     f"trial {trial+1}, odor {solenoid} released at "
                     f"{time_solenoid_on}"
+                )
+
+                self.output_log.value = (
+                    self.output_log.value + "\n" + self.arduino_step_text.value
                 )
 
             elif arduino_msg == "2":
@@ -230,6 +262,10 @@ class ArduinoSession(UserControl):
                     f"{time_solenoid_off}"
                 )
 
+                self.output_log.value = (
+                    self.output_log.value + "\n" + self.arduino_step_text.value
+                )
+
             elif arduino_msg == "3":
                 self.arduino_step_text.value = (
                     f"trial {trial+1}, odor "
@@ -241,21 +277,12 @@ class ArduinoSession(UserControl):
                     "solenoid info"
                 )
 
-                # if trial + 1 != self.num_trials:
-                #     placeholder.info(
-                #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-                #         "solenoid info"
-                #     )
-
-                #     print(
-                #         f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-                #         "solenoid info"
-                #     )
-                # else:
-                #     placeholder.info("Odor delivery sequence complete.")
-                #     self.sequence_complete = True
+                self.output_log.value = (
+                    self.output_log.value + "\n" + self.arduino_step_text.value
+                )
 
                 self.sent = 0
+
             self.update()
 
         self.update()
@@ -418,6 +445,7 @@ class ArduinoSession(UserControl):
                 controls=[
                     self.pb_column,
                     self.arduino_step_text,
+                    self.output_log,
                 ]
             )
         )
