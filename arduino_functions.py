@@ -286,8 +286,8 @@ class ArduinoSession(UserControl):
 
                 to_be_sent = (
                     # f"{solenoid},{self.acq_params.odor_duration},"
-                    f"{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
-                    f"{self.acq_params['time_btw_odors']}"
+                    f"<{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
+                    f"{self.acq_params['time_btw_odors']}>"
                 )
 
                 self.sent = 1
@@ -295,6 +295,7 @@ class ArduinoSession(UserControl):
                 # Send the information to arduino and wait for something to come back
                 # st.session_state.arduino.write(to_be_sent.encode())
                 self.arduino.write(to_be_sent.encode())
+                print(f"to be sent is {to_be_sent}")
 
                 while self.sent == 1:
                     self.parse_arduino_msg(
