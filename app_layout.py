@@ -255,8 +255,19 @@ class OdorDeliveryApp(UserControl):
             self.trial_table.trials,
         )
 
+        self.log_toggle = ft.Switch(
+            label="Show output log",
+            on_change=self.show_output_log,
+            label_position=ft.LabelPosition.LEFT,
+        )
+
         self.app_layout.controls.extend(
-            [self.divider2, self.progress_title, self.arduino_session]
+            [
+                self.divider2,
+                self.progress_title,
+                self.arduino_session,
+                self.log_toggle,
+            ]
         )
 
         self.update()
@@ -397,6 +408,15 @@ class OdorDeliveryApp(UserControl):
                 "Randomize Again",
                 on_click=self.randomize_trials_again,
             )
+
+    def show_output_log(self, e):
+        """"""
+        if self.arduino_session.output_log in self.app_layout.controls:
+            self.app_layout.controls.remove(self.arduino_session.output_log)
+        else:
+            self.app_layout.controls.append(self.arduino_session.output_log)
+
+        self.update()
 
     def build(self):
         return self.app_layout

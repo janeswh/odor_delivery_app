@@ -215,7 +215,7 @@ class ArduinoSession(UserControl):
                 self.time_scope_TTL.append(time_TTL)
 
                 self.arduino_step_text.value = (
-                    f"trial {trial+1}, odor "
+                    f"Trial {trial+1}, Odor "
                     f"{solenoid} microscope triggered at {time_TTL}"
                 )
 
@@ -224,9 +224,7 @@ class ArduinoSession(UserControl):
                     f"{time_TTL}"
                 )
 
-                self.output_log.value = (
-                    self.output_log.value + "\n" + self.arduino_step_text.value
-                )
+                self.update_log(trial + 1, solenoid, "9", time_TTL)
 
             elif arduino_msg == "1":
                 time_solenoid_on = datetime.datetime.now().isoformat(
@@ -234,18 +232,16 @@ class ArduinoSession(UserControl):
                 )
                 self.time_solenoid_on.append(time_solenoid_on)
                 self.arduino_step_text.value = (
-                    f"trial {trial+1}, odor "
+                    f"Trial {trial+1}, Odor "
                     f"{solenoid} released at {time_solenoid_on}"
                 )
 
                 print(
-                    f"trial {trial+1}, odor {solenoid} released at "
+                    f"Trial {trial+1}, Odor {solenoid} released at "
                     f"{time_solenoid_on}"
                 )
 
-                self.output_log.value = (
-                    self.output_log.value + "\n" + self.arduino_step_text.value
-                )
+                self.update_log(trial + 1, solenoid, "1", time_solenoid_on)
 
             elif arduino_msg == "2":
                 time_solenoid_off = datetime.datetime.now().isoformat(
@@ -253,8 +249,8 @@ class ArduinoSession(UserControl):
                 )
                 self.time_solenoid_off.append(time_solenoid_off)
                 self.arduino_step_text.value = (
-                    f"trial {trial+1}, odor "
-                    f"{solenoid} stopped at {time_solenoid_off}"
+                    f"Trial {trial+1}, Odor "
+                    f"{solenoid} stopped. Delay started at {time_solenoid_off}"
                 )
 
                 print(
@@ -262,14 +258,12 @@ class ArduinoSession(UserControl):
                     f"{time_solenoid_off}"
                 )
 
-                self.output_log.value = (
-                    self.output_log.value + "\n" + self.arduino_step_text.value
-                )
+                self.update_log(trial + 1, solenoid, "2", time_solenoid_off)
 
             elif arduino_msg == "3":
                 self.arduino_step_text.value = (
-                    f"trial {trial+1}, odor "
-                    f"{solenoid} delay stopped, send next solenoid info"
+                    f"Trial {trial+1}, Odor "
+                    f"{solenoid} delay finished, send next solenoid info"
                 )
 
                 print(
@@ -277,15 +271,37 @@ class ArduinoSession(UserControl):
                     "solenoid info"
                 )
 
-                self.output_log.value = (
-                    self.output_log.value + "\n" + self.arduino_step_text.value
-                )
+                self.update_log(trial + 1, solenoid, "3", None)
 
                 self.sent = 0
 
             self.update()
 
         self.update()
+
+    def update_log(self, trial, odor, step, isotime):
+        if isotime is not None:
+            time_obj = datetime.datetime.fromisoformat(isotime)
+            time = time_obj.strftime("%H:%M:%S")
+        else:
+            time = None
+        step_text_dict = {
+            "9": f"microscope triggered",
+            "1": f"released",
+            "2": f"stopped. Delay started",
+            "3": f"delay finished, send next solenoid info.",
+        }
+
+        if step == "3":
+            new_text = f"Trial {trial}, Odor {odor} {step_text_dict[step]}"
+        else:
+            new_text = (
+                f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
+            )
+
+        self.output_log.value = self.output_log.value + "\n" + new_text
+
+        self.update
 
     def generate_arduino_str(self):
         """
@@ -445,7 +461,7 @@ class ArduinoSession(UserControl):
                 controls=[
                     self.pb_column,
                     self.arduino_step_text,
-                    self.output_log,
+                    # self.output_log,
                 ]
             )
         )
