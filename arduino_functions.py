@@ -181,6 +181,9 @@ class ArduinoSession(UserControl):
 
         else:
             if arduino_msg == "9":
+                self.progress_bar_text.value = (
+                    f"Executing Trial {trial+1}/" f"{len(self.solenoid_order)}"
+                )
                 # Time when microscope has been triggered via TTL
                 time_TTL = datetime.datetime.now().isoformat(
                     "|", timespec="milliseconds"
@@ -264,20 +267,13 @@ class ArduinoSession(UserControl):
         y = odor duration (s)
         z = time between odors (s)
         """
-        # self.trig_signal = True  # for testing only
+
         print("generate_arduino_str called")
         if self.trig_signal == True:
+            self.progress_bar_text.value = (
+                f"Press Start on Thor Images to start odor delivery"
+            )
             for trial in range(len(self.solenoid_order)):
-                if trial == 0:
-                    self.progress_bar_text.value = (
-                        f"Press Start on Thor Images to start Trial {trial+1}/"
-                        f"{len(self.solenoid_order)}"
-                    )
-                else:
-                    self.progress_bar_text.value = (
-                        f"Executing Trial {trial+1}/"
-                        f"{len(self.solenoid_order)}"
-                    )
                 self.progress_bar.value = trial * (
                     1 / len(self.solenoid_order)
                 )
