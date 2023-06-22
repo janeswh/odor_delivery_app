@@ -404,14 +404,14 @@ class ArduinoSession(UserControl):
                 self.arduino.write(to_be_sent.encode())
                 print(f"to be sent is {to_be_sent}")
 
-                while not self.stop_threads.is_set():
-                    while self.sent == 1:
-                        self.parse_arduino_msg(
-                            trial,
-                            self.solenoid_order[trial],
-                        )
+                while not self.stop_threads.is_set() and self.sent == 1:
+                    # while self.sent == 1:
+                    self.parse_arduino_msg(
+                        trial,
+                        self.solenoid_order[trial],
+                    )
 
-                        self.update()
+                    self.update()
 
             self.sequence_complete = True
             self.trig_signal = False
