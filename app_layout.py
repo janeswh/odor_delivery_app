@@ -315,10 +315,16 @@ class OdorDeliveryApp(UserControl):
                 self.divider2,
                 self.progress_title,
                 self.arduino_session,
+                # self.abort_btn,
             ]
         )
 
         self.update()
+        self.arduino_session.arduino_layout.content.controls[
+            2
+        ].controls.append(self.abort_btn)
+        self.update()
+        # pdb.set_trace()
         self.start_arduino_session()
         # self.fake_arduino_session()
 
@@ -460,6 +466,20 @@ class OdorDeliveryApp(UserControl):
                 "Randomize Again",
                 on_click=self.randomize_trials_again,
             )
+
+        self.abort_btn = ft.ElevatedButton(
+            "Abort Experiment",
+            icon=ft.icons.STOP_ROUNDED,
+            on_click=self.abort_clicked,
+            col={"sm": 4},
+            disabled=False,
+        )
+
+    def abort_clicked(self, e):
+        self.arduino_session.stop_threads.set()
+        self.abort_btn.disabled = True
+        self.reset_settings_btn.disabled = False
+        self.update()
 
     def build(self):
         return self.app_layout

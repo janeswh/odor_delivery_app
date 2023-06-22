@@ -1,5 +1,5 @@
 import flet as ft
-from flet import UserControl, Column, Container, Text, TextField
+from flet import UserControl, Column, Container, Text, TextField, Row
 
 import datetime
 import serial
@@ -47,14 +47,6 @@ class ArduinoSession(UserControl):
             label="Show output log",
             on_change=self.show_output_log,
             value=False,
-        )
-
-        self.abort_btn = ft.ElevatedButton(
-            "Abort Experiment",
-            icon=ft.icons.STOP_ROUNDED,
-            on_click=self.abort_clicked,
-            col={"sm": 4},
-            disabled=False,
         )
 
         # Plateholder container for arduino progress msgs
@@ -413,15 +405,26 @@ class ArduinoSession(UserControl):
 
                     self.update()
 
-            self.sequence_complete = True
-            self.trig_signal = False
-            self.progress_bar.value = len(self.solenoid_order) * (
-                1 / len(self.solenoid_order)
-            )
+                if self.stop_threads.is_set():
+                    break
 
-            self.progress_bar_text.value = "Odor delivery sequence complete."
-            self.close_port()
-            self.update()
+            if self.stop_threads.is_set():
+                self.progress_bar_text.value = "Experiment aborted."
+                self.close_port()
+                self.update()
+                # break
+            else:
+                self.sequence_complete = True
+                self.trig_signal = False
+                self.progress_bar.value = len(self.solenoid_order) * (
+                    1 / len(self.solenoid_order)
+                )
+
+                self.progress_bar_text.value = (
+                    "Odor delivery sequence complete."
+                )
+                self.close_port()
+                self.update()
 
     def generate_arduino_str_test(self):
         """
@@ -527,18 +530,14 @@ class ArduinoSession(UserControl):
 
         self.update()
 
-    def abort_clicked(self, e):
-        self.stop_threads.set()
-
     def build(self):
         self.arduino_layout = Container(
             Column(
                 controls=[
                     self.pb_column,
                     self.arduino_step_text,
-                    self.log_toggle,
-                    self.abort_btn
-                    # self.output_log,
+                    # self.log_toggle
+                    Row(controls=[self.log_toggle]),
                 ]
             )
         )
