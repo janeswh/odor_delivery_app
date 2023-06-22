@@ -38,6 +38,12 @@ class ArduinoSession(UserControl):
             value="",
         )
 
+        self.log_toggle = ft.Switch(
+            label="Show output log",
+            on_change=self.show_output_log,
+            label_position=ft.LabelPosition.LEFT,
+        )
+
         # Plateholder container for arduino progress msgs
         # self.arduino_step_text = Text("Initial arduino step progress")
         self.arduino_step_text = Text()
@@ -291,14 +297,6 @@ class ArduinoSession(UserControl):
             "2": f"stopped. Delay started",
             "3": f"delay finished, send next solenoid info.",
         }
-
-        # if step == "3":
-        #     new_text = f"Trial {trial}, Odor {odor} {step_text_dict[step]}"
-        # else:
-        #     new_text = (
-        #         f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
-        #     )
-
         new_text = f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
 
         if trial == 1 and step == "9":
@@ -460,12 +458,22 @@ class ArduinoSession(UserControl):
         self.page.snack_bar.open = True
         self.page.update()
 
+    def show_output_log(self, e):
+        """"""
+        if self.output_log in self.arduino_layout.content.controls:
+            self.arduino_layout.content.controls.remove(self.output_log)
+        else:
+            self.arduino_layout.content.controls.append(self.output_log)
+
+        self.update()
+
     def build(self):
         self.arduino_layout = Container(
             Column(
                 controls=[
                     self.pb_column,
                     self.arduino_step_text,
+                    self.log_toggle
                     # self.output_log,
                 ]
             )
