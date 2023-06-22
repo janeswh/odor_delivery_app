@@ -409,7 +409,11 @@ class ArduinoSession(UserControl):
                     break
 
             if self.stop_threads.is_set():
-                self.progress_bar_text.value = "Experiment aborted."
+                self.progress_bar_text.value = (
+                    "Experiment aborted. Press "
+                    "Reset Settings to start a new experiment, or Start "
+                    "Experiment to redo the same odor sequence."
+                )
                 self.close_port()
                 self.update()
                 # break
