@@ -49,6 +49,8 @@ class ArduinoSession(UserControl):
             value=False,
         )
 
+        self.stop_threads = Event()
+
         # Plateholder container for arduino progress msgs
         # self.arduino_step_text = Text("Initial arduino step progress")
         self.arduino_step_text = Text()
@@ -369,7 +371,6 @@ class ArduinoSession(UserControl):
         y = odor duration (s)
         z = time between odors (s)
         """
-        self.stop_threads = Event()
 
         print("generate_arduino_str called")
         if self.trig_signal == True:
@@ -493,37 +494,41 @@ class ArduinoSession(UserControl):
         Saves the timestamps for when each solenoid was triggered, opened,
         and closed to a .csv file.
         """
-        csv_name = (
-            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
-        )
-        path = os.path.join(self.directory_path, csv_name)
+        if self.stop_threads.is_set():
+            pass
+        else:
+            csv_name = (
+                f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
+            )
+            path = os.path.join(self.directory_path, csv_name)
 
-        trial_labels = list(range(1, len(self.solenoid_order) + 1))
-        timings_df = pd.DataFrame(
-            {
-                "Trial": trial_labels,
-                "Odor #": self.solenoid_order,
-                "Microscope Triggered": self.time_scope_TTL,
-                "Solenoid opened": self.time_solenoid_on,
-                "Solenoid closed": self.time_solenoid_off,
-            }
-        )
+            trial_labels = list(range(1, len(self.solenoid_order) + 1))
+            timings_df = pd.DataFrame(
+                {
+                    "Trial": trial_labels,
+                    "Odor #": self.solenoid_order,
+                    "Microscope Triggered": self.time_scope_TTL,
+                    "Solenoid opened": self.time_solenoid_on,
+                    "Solenoid closed": self.time_solenoid_off,
+                }
+            )
 
-        timings_df.to_csv(path, index=False)
+            timings_df.to_csv(path, index=False)
 
-        timings_name = (
-            f"{self.date}_{self.animal_id}_" f"{self.roi}_solenoid_timings.csv"
-        )
+            timings_name = (
+                f"{self.date}_{self.animal_id}_"
+                f"{self.roi}_solenoid_timings.csv"
+            )
 
-        self.page.snack_bar.content.value = (
-            f"Solenoid timings "
-            f"saved to "
-            f"{timings_name} in "
-            f"experiment "
-            f"directory."
-        )
-        self.page.snack_bar.open = True
-        self.page.update()
+            self.page.snack_bar.content.value = (
+                f"Solenoid timings "
+                f"saved to "
+                f"{timings_name} in "
+                f"experiment "
+                f"directory."
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
 
     def show_output_log(self, e):
         """"""

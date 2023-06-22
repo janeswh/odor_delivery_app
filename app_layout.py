@@ -299,8 +299,11 @@ class OdorDeliveryApp(UserControl):
 
     def start_clicked(self, e):
         self.reset_settings_btn.disabled = True
-        self.randomize_button.disabled = True
+        if self.randomize_option.value is True:
+            self.randomize_button.disabled = True
         self.start_button.disabled = True
+        self.abort_btn.disabled = False
+        # pdb.set_trace()
 
         self.save_solenoid_info()
 
@@ -354,6 +357,7 @@ class OdorDeliveryApp(UserControl):
             while (
                 self.arduino_session.trig_signal is False
                 and self.arduino_session.sequence_complete is False
+                and not self.arduino_session.stop_threads.is_set()
             ):
                 arduino_msg = self.arduino_session.get_arduino_msg()
                 if "y" in arduino_msg:
@@ -364,10 +368,14 @@ class OdorDeliveryApp(UserControl):
                         target=self.arduino_session.thread_generate_arduino_str
                     )
                     thread.start()
+                    thread.join()
                     self.arduino_session.save_solenoid_timings()
 
                     self.arduino_session.trig_signal = False
-                    self.prompt_new_exp()
+                    self.abort_btn.disabled = True
+                    self.update()  # to show disabled button
+                    if not self.arduino_session.stop_threads.is_set():
+                        self.prompt_new_exp()
                 else:
                     pass
 
@@ -378,10 +386,15 @@ class OdorDeliveryApp(UserControl):
             self.arduino_session.close_port()
             print("arduino closed")
 
+    def new_exp_clicked(self, e):
+        self.reset_clicked(e)
+        self.close_newexp_dlg(e)
+
     def prompt_new_exp(self):
         """
         Shows dialog informing user that experiment has finished.
         """
+        print("new exp dialog should open")
         self.exp_fin_dlg = ft.AlertDialog(
             modal=True,
             title=Text("Odor delivery completed."),
@@ -393,22 +406,48 @@ class OdorDeliveryApp(UserControl):
                     on_click=self.new_exp_clicked,
                 ),
                 # ft.TextButton("Yes", on_click=self.close_dlg),
-                ft.TextButton("No", on_click=self.close_dlg),
+                ft.TextButton("No", on_click=self.close_newexp_dlg),
             ],
         )
         self.page.dialog = self.exp_fin_dlg
         self.exp_fin_dlg.open = True
         self.page.update()
+        print("new exp dialog should open")
 
-    def close_dlg(self, e):
+    def close_newexp_dlg(self, e):
         self.exp_fin_dlg.open = False
         self.reset_settings_btn.disabled = False
         self.update()
         self.page.update()
 
-    def new_exp_clicked(self, e):
-        self.reset_clicked(e)
-        self.close_dlg(e)
+    def abort_clicked(self, e):
+        # self.reset_clicked(e)
+        # self.close_newexp_dlg(e)
+
+        """
+        Shows dialog informing user that experiment has finished.
+        """
+        self.abort_exp_dlg = ft.AlertDialog(
+            modal=False,
+            title=Text("Please confirm"),
+            content=Text("Are you sure you want to stop the experiment?"),
+            actions=[
+                ft.TextButton(
+                    "Yes",
+                    on_click=self.abort,
+                ),
+                ft.TextButton("No", on_click=self.close_abort_dlg),
+            ],
+        )
+        self.page.dialog = self.abort_exp_dlg
+        self.abort_exp_dlg.open = True
+        self.page.update()
+
+    def close_abort_dlg(self, e):
+        self.abort_exp_dlg.open = False
+        self.reset_settings_btn.disabled = False
+        self.update()
+        self.page.update()
 
     def save_solenoid_info(self):
         csv_name = (
@@ -471,14 +510,18 @@ class OdorDeliveryApp(UserControl):
             "Abort Experiment",
             icon=ft.icons.STOP_ROUNDED,
             on_click=self.abort_clicked,
+            # on_click=self.abort,
             col={"sm": 4},
             disabled=False,
         )
 
-    def abort_clicked(self, e):
+    def abort(self, e):
+        self.abort_exp_dlg.open = False
+        self.page.update()
         self.arduino_session.stop_threads.set()
         self.abort_btn.disabled = True
         self.reset_settings_btn.disabled = False
+        self.start_button.disabled = False
         self.update()
 
     def build(self):
