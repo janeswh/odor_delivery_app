@@ -54,7 +54,7 @@ class OdorDeliveryApp(UserControl):
         self.directory_path = Text(col={"sm": 8})
 
         self.get_directory_dialog = FilePicker(
-            on_result=self.get_directory_result
+            on_result=self.get_directory_result,
         )
         self.page.overlay.append(self.get_directory_dialog)
         self.directory_path = Text(col={"sm": 8})
@@ -148,6 +148,7 @@ class OdorDeliveryApp(UserControl):
     # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
         self.directory_path.value = e.path
+
         try:
             self.get_session_info()
             self.page.banner.open = False
@@ -307,6 +308,14 @@ class OdorDeliveryApp(UserControl):
 
         self.save_solenoid_info()
 
+        for control in [
+            self.divider2,
+            self.progress_title,
+            self.arduino_session,
+        ]:
+            if control in self.app_layout.controls:
+                self.app_layout.controls.remove(control)
+
         self.arduino_session = ArduinoSession(
             self.page,
             self.settings_dict,
@@ -372,10 +381,10 @@ class OdorDeliveryApp(UserControl):
                     self.arduino_session.save_solenoid_timings()
 
                     self.arduino_session.trig_signal = False
-                    self.abort_btn.disabled = True
-                    self.update()  # to show disabled button
+
                     if not self.arduino_session.stop_threads.is_set():
                         self.prompt_new_exp()
+
                 else:
                     pass
 
@@ -385,6 +394,9 @@ class OdorDeliveryApp(UserControl):
         ):
             self.arduino_session.close_port()
             print("arduino closed")
+
+        self.abort_btn.disabled = True
+        self.arduino_session.update()  # to show disabled button
 
     def new_exp_clicked(self, e):
         self.reset_clicked(e)
@@ -471,7 +483,10 @@ class OdorDeliveryApp(UserControl):
             "Open directory",
             icon=icons.FOLDER_OPEN,
             col={"sm": 4},
-            on_click=lambda _: self.get_directory_dialog.get_directory_path(),
+            on_click=lambda _: self.get_directory_dialog.get_directory_path(
+                # initial directory doesn't work yet - https://github.com/flet-dev/flet/issues/884
+                # initial_directory="D:\\Jane"
+            ),
             disabled=self.page.web,
         )
 
