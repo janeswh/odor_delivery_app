@@ -21,6 +21,7 @@ from trial_order import TrialOrderTable
 from arduino_functions import ArduinoSession
 
 import pyduinocli
+from threading import Thread
 
 
 class OdorDeliveryApp(UserControl):
@@ -352,7 +353,11 @@ class OdorDeliveryApp(UserControl):
                 if "y" in arduino_msg:
                     print("Arduino is conencted")
                     self.arduino_session.trig_signal = True
-                    self.arduino_session.generate_arduino_str()
+                    # self.arduino_session.generate_arduino_str()
+                    thread = Thread(
+                        target=self.arduino_session.thread_generate_arduino_str
+                    )
+                    thread.start()
                     self.arduino_session.save_solenoid_timings()
 
                     self.arduino_session.trig_signal = False

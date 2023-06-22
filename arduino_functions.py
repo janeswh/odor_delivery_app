@@ -7,7 +7,8 @@ import pdb
 import time
 import pandas as pd
 import os
-import pyduinocli
+
+from threading import Thread, Event
 
 
 class ArduinoSession(UserControl):
@@ -46,6 +47,14 @@ class ArduinoSession(UserControl):
             label="Show output log",
             on_change=self.show_output_log,
             value=False,
+        )
+
+        self.abort_btn = ft.ElevatedButton(
+            "Abort Experiment",
+            icon=ft.icons.STOP_ROUNDED,
+            on_click=self.abort_clicked,
+            col={"sm": 4},
+            disabled=False,
         )
 
         # Plateholder container for arduino progress msgs
@@ -361,6 +370,59 @@ class ArduinoSession(UserControl):
             self.close_port()
             self.update()
 
+    def thread_generate_arduino_str(self):
+        """
+        Generates arduino execution strs in format "x, y, z" where
+        x = solenoid number
+        y = odor duration (s)
+        z = time between odors (s)
+        """
+        self.stop_threads = Event()
+
+        print("generate_arduino_str called")
+        if self.trig_signal == True:
+            self.progress_bar_text.value = (
+                f"Press Start on Thor Images to start odor delivery"
+            )
+            for trial in range(len(self.solenoid_order)):
+                self.progress_bar.value = trial * (
+                    1 / len(self.solenoid_order)
+                )
+                self.update()
+                print(f"doing trial {trial+1}")
+
+                to_be_sent = (
+                    # f"{solenoid},{self.acq_params.odor_duration},"
+                    f"<{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
+                    f"{self.acq_params['time_btw_odors']}>"
+                )
+
+                self.sent = 1
+
+                # Send the information to arduino and wait for something to come back
+                # st.session_state.arduino.write(to_be_sent.encode())
+                self.arduino.write(to_be_sent.encode())
+                print(f"to be sent is {to_be_sent}")
+
+                while not self.stop_threads.is_set():
+                    while self.sent == 1:
+                        self.parse_arduino_msg(
+                            trial,
+                            self.solenoid_order[trial],
+                        )
+
+                        self.update()
+
+            self.sequence_complete = True
+            self.trig_signal = False
+            self.progress_bar.value = len(self.solenoid_order) * (
+                1 / len(self.solenoid_order)
+            )
+
+            self.progress_bar_text.value = "Odor delivery sequence complete."
+            self.close_port()
+            self.update()
+
     def generate_arduino_str_test(self):
         """
         Generates arduino execution strs in format "x, y, z" where
@@ -465,13 +527,17 @@ class ArduinoSession(UserControl):
 
         self.update()
 
+    def abort_clicked(self, e):
+        self.stop_threads.set()
+
     def build(self):
         self.arduino_layout = Container(
             Column(
                 controls=[
                     self.pb_column,
                     self.arduino_step_text,
-                    self.log_toggle
+                    self.log_toggle,
+                    self.abort_btn
                     # self.output_log,
                 ]
             )
