@@ -20,13 +20,34 @@ from settings_layout import SettingsLayout
 from trial_order import TrialOrderTable
 from arduino_functions import ArduinoSession
 
+import pyduinocli
+
 
 class OdorDeliveryApp(UserControl):
     def __init__(self, page: Page):
         super().__init__()
         self.page = page
+        self.upload_arduino()
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text("Snack bar init"), bgcolor=ft.colors.SECONDARY
+        )
+
+        self.page.banner = ft.Banner(
+            bgcolor=ft.colors.TERTIARY_CONTAINER,
+            leading=ft.Icon(
+                ft.icons.WARNING_AMBER_ROUNDED,
+                color=ft.colors.TERTIARY,
+                size=40,
+            ),
+            content=ft.Text(
+                "Please make sure the selected experiment folder is named "
+                "in the correct format of YYMMDD--123456-7-8_ROIX where "
+                "123456-7-8 is the animal ID, and X is the one-digit ROI number."
+            ),
+            actions=[
+                ft.TextButton("OK", on_click=self.close_banner),
+            ],
+            force_actions_below=True,
         )
 
         self.directory_path = Text(col={"sm": 8})
@@ -53,6 +74,20 @@ class OdorDeliveryApp(UserControl):
         self.make_app_layout()
 
         self.page.update()
+
+    def upload_arduino(self):
+        # Compiles and uploads arduino sketch
+        arduino_instance = pyduinocli.Arduino("./arduino-cli")
+        # brds = arduino_instance.board.list()
+        # port = brds["result"][2]["port"]["address"]
+        # fqbn = brds["result"][2]["matching_boards"][0]["fqbn"]
+
+        port = "COM7"
+        fqbn = "arduino:avr:mega"
+        arduino_instance.compile(fqbn=fqbn, sketch="new_arduino_sketch")
+        arduino_instance.upload(
+            fqbn=fqbn, sketch="new_arduino_sketch", port=port
+        )
 
     def make_app_layout(self):
         self.settings_title = Text(
@@ -105,9 +140,29 @@ class OdorDeliveryApp(UserControl):
             ],
         )
 
+    def close_banner(self, e):
+        self.page.banner.open = False
+        self.page.update()
+
     # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
-        self.directory_path.value = e.path if e.path else "Cancelled!"
+        self.directory_path.value = e.path
+        try:
+            self.get_session_info()
+            self.page.banner.open = False
+        except TypeError:
+            self.directory_path.value = "Cancelled!"
+            self.page.banner.open = False
+
+        except IndexError:
+            if self.directory_path.value == "":
+                self.directory_path.value = "Cancelled!"
+                self.page.banner.open = False
+            else:
+                self.page.banner.open = True
+                self.directory_path.value = None
+
+        self.page.update()
         self.directory_path.update()
         self.check_settings_complete()
 
@@ -220,8 +275,6 @@ class OdorDeliveryApp(UserControl):
         if (
             ""
             in [
-                # self.settings_fields.animal_id.text_field.value,
-                # self.settings_fields.roi.text_field.value,
                 self.settings_fields.num_odors.value,
                 self.settings_fields.num_trials.text_field.value,
                 self.settings_fields.odor_duration.text_field.value,
@@ -229,6 +282,7 @@ class OdorDeliveryApp(UserControl):
             ]
             or self.settings_fields.num_odors.value is None
             or self.directory_path.value is None
+            or self.directory_path.value == ""
             or self.directory_path.value == "Cancelled!"
         ):
             self.save_settings_btn.disabled = True

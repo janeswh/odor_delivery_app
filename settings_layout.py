@@ -29,6 +29,10 @@ class SettingsFields(UserControl):
             value=self.textfield_dict[self.label]["value"],
             label=label,
             on_change=on_change,
+            border_color=ft.colors.SECONDARY_CONTAINER,
+            border_width=1,
+            focused_border_color=ft.colors.SURFACE_TINT,
+            focused_border_width=2,
         )
 
         if self.label == "Animal ID":
@@ -71,6 +75,10 @@ class SettingsLayout(UserControl):
             # alignment=ft.alignment.center,
             col={"sm": 4},
             on_change=check_complete,
+            border_color=ft.colors.SECONDARY_CONTAINER,
+            border_width=1,
+            focused_border_color=ft.colors.SURFACE_TINT,
+            focused_border_width=2,
         )
         self.num_trials = SettingsFields(
             label="# Trials/odor", on_change=check_complete

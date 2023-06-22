@@ -7,6 +7,7 @@ import pdb
 import time
 import pandas as pd
 import os
+import pyduinocli
 
 
 class ArduinoSession(UserControl):
@@ -30,18 +31,21 @@ class ArduinoSession(UserControl):
         self.progress_bar_text = Text()
         self.pb_column = Column([self.progress_bar_text, self.progress_bar])
         self.output_log = TextField(
-            label="Script output log",
+            # label="Script output log",
             multiline=True,
             max_lines=4,
             min_lines=3,
             read_only=True,
             value="",
+            text_size=12,
+            border_color=ft.colors.OUTLINE_VARIANT,
+            bgcolor=ft.colors.SECONDARY_CONTAINER,
         )
 
         self.log_toggle = ft.Switch(
             label="Show output log",
             on_change=self.show_output_log,
-            label_position=ft.LabelPosition.LEFT,
+            value=False,
         )
 
         # Plateholder container for arduino progress msgs
@@ -226,7 +230,7 @@ class ArduinoSession(UserControl):
                 )
 
                 print(
-                    f"trial {trial+1}, odor {solenoid} microscope triggered at "
+                    f"Trial {trial+1}, Odor {solenoid} microscope triggered at "
                     f"{time_TTL}"
                 )
 
@@ -260,7 +264,7 @@ class ArduinoSession(UserControl):
                 )
 
                 print(
-                    f"trial {trial+1}, odor {solenoid} stopped at "
+                    f"Trial {trial+1}, Odor {solenoid} stopped at "
                     f"{time_solenoid_off}"
                 )
 
@@ -273,7 +277,7 @@ class ArduinoSession(UserControl):
                 )
 
                 print(
-                    f"trial {trial+1}, odor {solenoid} delay stopped, send next "
+                    f"Trial {trial+1}, Odor {solenoid} delay stopped, send next "
                     "solenoid info"
                 )
 
@@ -281,7 +285,7 @@ class ArduinoSession(UserControl):
 
                 self.sent = 0
 
-            self.update()
+            # self.update()
 
         self.update()
 
@@ -294,7 +298,7 @@ class ArduinoSession(UserControl):
         step_text_dict = {
             "9": f"microscope triggered",
             "1": f"released",
-            "2": f"stopped. Delay started",
+            "2": f"stopped, delay started",
             "3": f"delay finished, send next solenoid info.",
         }
         new_text = f"{time}: Trial {trial}, Odor {odor} {step_text_dict[step]}"
@@ -345,8 +349,6 @@ class ArduinoSession(UserControl):
                         self.solenoid_order[trial],
                     )
 
-                    # # Mark end after last trial
-                    # if trial + 1 == len(bar):
                     self.update()
 
             self.sequence_complete = True
@@ -358,10 +360,6 @@ class ArduinoSession(UserControl):
             self.progress_bar_text.value = "Odor delivery sequence complete."
             self.close_port()
             self.update()
-
-        # st.info("Experiment finished.")
-        # else:
-        # st.info("Already finished.")
 
     def generate_arduino_str_test(self):
         """
