@@ -404,6 +404,8 @@ class ArduinoSession(UserControl):
                         self.solenoid_order[trial],
                     )
 
+                    self.save_solenoid_timings_test(trial)
+
                     self.update()
 
                 if self.stop_threads.is_set():
@@ -529,6 +531,47 @@ class ArduinoSession(UserControl):
             )
             self.page.snack_bar.open = True
             self.page.update()
+
+    def save_solenoid_timings_test(self, trial):
+        """
+        Saves the timestamps for when each solenoid was triggered, opened,
+        and closed to a .csv file.
+        """
+        csv_name = (
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
+        )
+        path = os.path.join(self.directory_path, csv_name)
+
+        if trial == 0:
+            trial_labels = [trial + 1]
+        else:
+            trial_labels = list(range(1, trial + 2))
+
+        timings_df = pd.DataFrame(
+            {
+                "Trial": trial_labels,
+                "Odor #": self.solenoid_order[: trial + 2],
+                "Microscope Triggered": self.time_scope_TTL,
+                "Solenoid opened": self.time_solenoid_on,
+                "Solenoid closed": self.time_solenoid_off,
+            }
+        )
+
+        timings_df.to_csv(path, index=False)
+
+        timings_name = (
+            f"{self.date}_{self.animal_id}_" f"{self.roi}_solenoid_timings.csv"
+        )
+
+        self.page.snack_bar.content.value = (
+            f"Solenoid timings "
+            f"saved to "
+            f"{timings_name} in "
+            f"experiment "
+            f"directory."
+        )
+        self.page.snack_bar.open = True
+        self.page.update()
 
     def show_output_log(self, e):
         """"""

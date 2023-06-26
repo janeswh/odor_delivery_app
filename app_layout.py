@@ -378,7 +378,7 @@ class OdorDeliveryApp(UserControl):
                     )
                     thread.start()
                     thread.join()
-                    self.arduino_session.save_solenoid_timings()
+                    # self.arduino_session.save_solenoid_timings()
 
                     self.arduino_session.trig_signal = False
 
