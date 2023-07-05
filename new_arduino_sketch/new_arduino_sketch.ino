@@ -135,7 +135,7 @@ void delayOn() {//delay between odors
 }
 
 //============
-
+// Based on Example 5 from https://forum.arduino.cc/t/serial-input-basics-updated/382007/3
 void recvWithStartEndMarkers() {
     static boolean recvInProgress = false;
     static byte ndx = 0;

@@ -512,12 +512,15 @@ class OdorDeliveryApp(UserControl):
 
     def make_rand_start_buttons(self):
         self.start_button = ElevatedButton(
-            "Start Experiment!!!!", on_click=self.start_clicked
+            "Start Experiment",
+            on_click=self.start_clicked,
+            icon=ft.icons.START_ROUNDED,
         )
 
         if self.randomize_option.value is True:
             self.randomize_button = ElevatedButton(
                 "Randomize Again",
+                icon=ft.icons.SHUFFLE_ROUNDED,
                 on_click=self.randomize_trials_again,
             )
 
