@@ -14,11 +14,12 @@ from flet import (
 import datetime
 
 import os
+from pathlib import Path
 import pdb
 
-from settings_layout import SettingsLayout
-from trial_order import TrialOrderTable
-from arduino_functions import ArduinoSession
+from .settings_layout import SettingsLayout
+from .trial_order import TrialOrderTable
+from .arduino_functions import ArduinoSession
 
 import pyduinocli
 from threading import Thread
@@ -78,17 +79,24 @@ class OdorDeliveryApp(UserControl):
 
     def upload_arduino(self):
         # Compiles and uploads arduino sketch
-        arduino_instance = pyduinocli.Arduino("./arduino-cli")
+        path = Path(__file__).parents[2]
+
+        arduino_instance = pyduinocli.Arduino(
+            os.path.join(path, "arduino-cli.exe")
+        )
+
+        # arduino_instance = pyduinocli.Arduino("../arduino-cli")
         # brds = arduino_instance.board.list()
         # port = brds["result"][2]["port"]["address"]
         # fqbn = brds["result"][2]["matching_boards"][0]["fqbn"]
 
+        path_1 = Path(__file__).parents[1]
+        sketch_path = os.path.join(path_1, "arduino_sketch")
+
         port = "COM7"
         fqbn = "arduino:avr:mega"
-        arduino_instance.compile(fqbn=fqbn, sketch="new_arduino_sketch")
-        arduino_instance.upload(
-            fqbn=fqbn, sketch="new_arduino_sketch", port=port
-        )
+        arduino_instance.compile(fqbn=fqbn, sketch=sketch_path)
+        arduino_instance.upload(fqbn=fqbn, sketch=sketch_path, port=port)
 
     def make_app_layout(self):
         self.settings_title = Text(

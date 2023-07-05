@@ -1,6 +1,6 @@
 import flet as ft
 from flet import Page
-from app_layout import OdorDeliveryApp
+from components.app_layout import OdorDeliveryApp
 
 
 if __name__ == "__main__":
