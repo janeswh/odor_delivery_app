@@ -156,16 +156,17 @@ void checkTrigger() {
 
 void newcheckTrigger() {
   ardTrigger = 0; //reset checkTrigger -- should wait for a trigger before each odor delivery
+  Serial.println("in check trigger");
   if (ardTrigger == 0){
     while (ardTrigger == 0){
-      delay(50); //100 ms delay between reading trigger
-      Serial.println("no scope signal");
+      delay(10); //100 ms delay between reading trigger
+      // Serial.println("no scope signal");
       receivedSignal = digitalRead(analogInPin);
 
      
       if (receivedSignal == 1){
           ardTrigger = 1;
-          Serial.println("scope signal received");
+          // Serial.println("scope signal received");
         }
       }
 
@@ -175,9 +176,12 @@ void newcheckTrigger() {
 //executes the solenoid order
 void executeSolenoids() {
   if (Serial.available()>1){ //check if there is input available
+    Serial.println("Serial is available");
     pinSet = Serial.parseInt()+1; //get the pin to output
     odorSec = Serial.parseInt();
     delaySec = Serial.parseInt()-1;
+    Serial.print("pinSet is");
+    Serial.println(pinSet);
     //Serial.println(pinSet); //remove
     //Serial.println(odorSec); //remove
     //Serial.println(delaySec);//remove
@@ -192,6 +196,11 @@ void executeSolenoids() {
       //resetFunction();
     //}
     //deleted else if
+    // if (pinSet = 0){
+    //   Serial.println("no pinset");
+    // }
+    // Serial.println("pinSet is ");
+    // Serial.println(pinSet);
     if (pinSet > 1){
       //delayedFirstOdor += 1;
       //Serial.println(delayedFirstOdor);
@@ -217,6 +226,15 @@ void executeSolenoids() {
 void loop() {
   // put your main code here, to run repeatedly:
   delay(50);
+  Serial.println(Serial.available());
+  // if (Serial.available()){
+  //   Serial.print("Serial is available, serial is");
+  //   Serial.println(Serial.parseInt());
+  // }
+  // if (Serial.available() == 1){
+  //   Serial.print("Serial AVAILABLE=1, serial is");
+  //   Serial.println(Serial.parseInt());
+  // }
   Serial.println("y"); //tells python that the arduino is connected and running
   executeSolenoids(); //run the code
 }

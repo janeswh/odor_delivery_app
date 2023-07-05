@@ -272,6 +272,7 @@ class ArduinoSession(UserControl):
                 )
 
                 self.update_log(trial + 1, solenoid, "2", time_solenoid_off)
+                self.save_solenoid_timings_test(trial)
 
             elif arduino_msg == "3":
                 self.arduino_step_text.value = (
@@ -404,7 +405,7 @@ class ArduinoSession(UserControl):
                         self.solenoid_order[trial],
                     )
 
-                    self.save_solenoid_timings_test(trial)
+                    # self.save_solenoid_timings_test(trial)
 
                     self.update()
 
@@ -417,8 +418,8 @@ class ArduinoSession(UserControl):
                     "Reset Settings to start a new experiment, or Start "
                     "Experiment to redo the same odor sequence."
                 )
-                self.close_port()
-                self.update()
+                # self.close_port()
+                # self.update()
                 # break
             else:
                 self.sequence_complete = True
@@ -430,8 +431,26 @@ class ArduinoSession(UserControl):
                 self.progress_bar_text.value = (
                     "Odor delivery sequence complete."
                 )
-                self.close_port()
-                self.update()
+                # self.close_port()
+                # self.update()
+
+            self.close_port()
+            self.update()
+
+            timings_name = (
+                f"{self.date}_{self.animal_id}_"
+                f"{self.roi}_solenoid_timings.csv"
+            )
+
+            self.page.snack_bar.content.value = (
+                f"Solenoid timings "
+                f"saved to "
+                f"{timings_name} in "
+                f"experiment "
+                f"directory."
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
 
     def generate_arduino_str_test(self):
         """
@@ -547,15 +566,18 @@ class ArduinoSession(UserControl):
         else:
             trial_labels = list(range(1, trial + 2))
 
-        timings_df = pd.DataFrame(
-            {
-                "Trial": trial_labels,
-                "Odor #": self.solenoid_order[: trial + 2],
-                "Microscope Triggered": self.time_scope_TTL,
-                "Solenoid opened": self.time_solenoid_on,
-                "Solenoid closed": self.time_solenoid_off,
-            }
-        )
+        try:
+            timings_df = pd.DataFrame(
+                {
+                    "Trial": trial_labels,
+                    "Odor #": self.solenoid_order[: trial + 1],
+                    "Microscope Triggered": self.time_scope_TTL,
+                    "Solenoid opened": self.time_solenoid_on,
+                    "Solenoid closed": self.time_solenoid_off,
+                }
+            )
+        except ValueError:
+            pdb.set_trace()
 
         timings_df.to_csv(path, index=False)
 
@@ -563,15 +585,15 @@ class ArduinoSession(UserControl):
             f"{self.date}_{self.animal_id}_" f"{self.roi}_solenoid_timings.csv"
         )
 
-        self.page.snack_bar.content.value = (
-            f"Solenoid timings "
-            f"saved to "
-            f"{timings_name} in "
-            f"experiment "
-            f"directory."
-        )
-        self.page.snack_bar.open = True
-        self.page.update()
+        # self.page.snack_bar.content.value = (
+        #     f"Solenoid timings "
+        #     f"saved to "
+        #     f"{timings_name} in "
+        #     f"experiment "
+        #     f"directory."
+        # )
+        # self.page.snack_bar.open = True
+        # self.page.update()
 
     def show_output_log(self, e):
         """"""
