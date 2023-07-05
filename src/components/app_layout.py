@@ -111,8 +111,13 @@ class OdorDeliveryApp(UserControl):
             "Experiment Progress", style=ft.TextThemeStyle.HEADLINE_LARGE
         )
 
-        self.directory_prompt = Text(
-            "Select experiment folder to save solenoid info"
+        self.directory_prompt = Column(
+            controls=[
+                Text("Select experiment folder to save solenoid info"),
+                Text(
+                    "Folder should be named in the format YYMMDD--123456-7-8_ROIX"
+                ),
+            ]
         )
 
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
@@ -535,6 +540,8 @@ class OdorDeliveryApp(UserControl):
         self.abort_btn = ft.ElevatedButton(
             "Abort Experiment",
             icon=ft.icons.STOP_ROUNDED,
+            bgcolor=ft.colors.TERTIARY_CONTAINER,
+            color=ft.colors.TERTIARY,
             on_click=self.abort_clicked,
             # on_click=self.abort,
             col={"sm": 4},
