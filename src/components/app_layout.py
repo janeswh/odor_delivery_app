@@ -11,15 +11,13 @@ from flet import (
 )
 
 
-import datetime
-
 import os
-from pathlib import Path
 import pdb
 
-from .settings_layout import SettingsLayout
-from .trial_order import TrialOrderTable
-from .arduino_functions import ArduinoSession
+from components.settings_layout import SettingsLayout
+from components.trial_order import TrialOrderTable
+from components.arduino_functions import ArduinoSession
+from components.utils import resolve_path
 
 import pyduinocli
 from threading import Thread
@@ -79,19 +77,13 @@ class OdorDeliveryApp(UserControl):
 
     def upload_arduino(self):
         # Compiles and uploads arduino sketch
-        path = Path(__file__).parents[2]
+        arduino_cli_path = resolve_path("resources/arduino-cli.exe")
+        arduino_instance = pyduinocli.Arduino(arduino_cli_path)
 
-        arduino_instance = pyduinocli.Arduino(
-            os.path.join(path, "arduino-cli.exe")
-        )
-
-        # arduino_instance = pyduinocli.Arduino("../arduino-cli")
         # brds = arduino_instance.board.list()
         # port = brds["result"][2]["port"]["address"]
         # fqbn = brds["result"][2]["matching_boards"][0]["fqbn"]
-
-        path_1 = Path(__file__).parents[1]
-        sketch_path = os.path.join(path_1, "arduino_sketch")
+        sketch_path = resolve_path("arduino_sketch")
 
         port = "COM7"
         fqbn = "arduino:avr:mega"

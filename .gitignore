@@ -5,3 +5,8 @@
 .vscode/*
 *.exe
 __pycache__
+
+# build related
+*.spec
+build/
+dist/
