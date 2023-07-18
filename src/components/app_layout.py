@@ -13,6 +13,7 @@ from flet import (
 
 import os
 import pdb
+from datetime import datetime
 
 from components.settings_layout import SettingsLayout
 from components.trial_order import TrialOrderTable
@@ -26,6 +27,7 @@ from threading import Thread
 class OdorDeliveryApp(UserControl):
     def __init__(self, page: Page):
         super().__init__()
+        self.csv_time = None
         self.page = page
         self.upload_arduino()
         self.page.snack_bar = ft.SnackBar(
@@ -309,7 +311,7 @@ class OdorDeliveryApp(UserControl):
             self.randomize_button.disabled = True
         self.start_button.disabled = True
         self.abort_btn.disabled = False
-        # pdb.set_trace()
+        self.csv_time = datetime.now().strftime("%y%m%d-%H%M%S")
 
         self.save_solenoid_info()
 
@@ -322,6 +324,7 @@ class OdorDeliveryApp(UserControl):
                 self.app_layout.controls.remove(control)
 
         self.arduino_session = ArduinoSession(
+            self.csv_time,
             self.page,
             self.settings_dict,
             self.trial_table.trials,
@@ -469,7 +472,8 @@ class OdorDeliveryApp(UserControl):
 
     def save_solenoid_info(self):
         csv_name = (
-            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_order.csv"
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_order_"
+            f"{self.csv_time}.csv"
         )
 
         path = os.path.join(self.directory_path.value, csv_name)

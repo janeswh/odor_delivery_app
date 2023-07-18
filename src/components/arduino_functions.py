@@ -12,11 +12,12 @@ from threading import Thread, Event
 
 
 class ArduinoSession(UserControl):
-    def __init__(self, page, settings, odor_sequence):
+    def __init__(self, csv_time, page, settings, odor_sequence):
         """
         Defines the class for holding signals sent to the arduino per session
         """
         super().__init__()
+        self.csv_time = csv_time
         self.page = page
         self.acq_params = settings
         self.solenoid_order = odor_sequence
@@ -519,7 +520,8 @@ class ArduinoSession(UserControl):
             pass
         else:
             csv_name = (
-                f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
+                f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
+                f"{self.csv_time}.csv"
             )
             path = os.path.join(self.directory_path, csv_name)
 
@@ -557,7 +559,8 @@ class ArduinoSession(UserControl):
         and closed to a .csv file.
         """
         csv_name = (
-            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
+            f"{self.csv_time}.csv"
         )
         path = os.path.join(self.directory_path, csv_name)
 
@@ -582,7 +585,8 @@ class ArduinoSession(UserControl):
         timings_df.to_csv(path, index=False)
 
         timings_name = (
-            f"{self.date}_{self.animal_id}_" f"{self.roi}_solenoid_timings.csv"
+            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
+            f"{self.csv_time}.csv"
         )
 
         # self.page.snack_bar.content.value = (
