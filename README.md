@@ -4,20 +4,20 @@ This app interfaces between the Arduino board and ThorImages software to control
 
 ## Getting started
 
-1. Make sure ThorImages is running.
+1. Make sure ThorImage is running.
 2. Open "Odor Delivery App.exe" on the Desktop, and you should see this screen:  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/start.png)
 
 3. Click on "Open Directory" and select the folder where your acquired ThorImages will be saved to. It should be named correctly in the format YYMMDD--123456-7-8_ROIX, where 123456-7-8 is the animal ID, and X is the ROI number. Please make sure that you've selected the correct folder for each experiment, because all solenoid order/timing info will be named according to the information contained in the folder name.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/pick_folder.png)
 
-4. Enter your experiment settings and click "Save". The Trial order will be displayed in a table below. If you need to change any settings, click "Reset Settings", enter new settings, and "Save" again. You can also click "Randomize Again" to shuffle the trial order. Once you're happy with all the settings, click "Start Experiment".  
+4. Enter your experiment settings and click "Save". To test odors, set #odors and #Trials to 1. For the odor panel, set #odors to 8 and #Trials to 3. Typically you won't change the default odor duration of 1 or the default time between odors of 10. The Trial order will be displayed in a table below. If you need to change any settings, click "Reset Settings", enter new settings, and "Save" again. You can also click "Randomize Again" to shuffle the trial order. Once you're happy with all the settings, click "Start Experiment".  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/trial_order.png)
 
-5. As soon as you click start, the trial order will be saved to a csv file in your selected experiment folder. In the app, a new section "Experiment Progress" will appear, and a message will display briefly saying that the arduino port has been opened. Next, it will prompt you to Start or Run the experiment on ThorImages.  
+5. As soon as you click start, the trial order will be saved to a csv file in your selected experiment folder. In the app, a new section "Experiment Progress" will appear, and a message will display briefly saying that the arduino port has been opened. Next, it will prompt you to Start (for single trials) or Run (for a script) the experiment in ThorImage.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/press_start.png)
 
-6. Once ThorImages starts, the app will display a progress bar showing each step of odor delivery.
+6. Once ThorImage starts, the app will display a progress bar showing each step of odor delivery.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/progress.png)
 
 7. You can click on "Show output log" to see a scrollable box containing a timestamped history of the odor delivery steps.  
