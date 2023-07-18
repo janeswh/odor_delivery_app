@@ -434,6 +434,7 @@ class OdorDeliveryApp(UserControl):
     def close_newexp_dlg(self, e):
         self.exp_fin_dlg.open = False
         self.reset_settings_btn.disabled = False
+        self.start_button.disabled = False
         self.update()
         self.page.update()
 
