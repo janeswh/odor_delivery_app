@@ -35,5 +35,5 @@ This app interfaces between the Arduino board and ThorImages software to control
 11. After you abort an experiment, you can either click "Reset Settings" to enter new settings, or just click "Start Experiment" again to rerun the experiment with unchanged settings.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/aborted.png)
 
-12. Solenoid order and timing csv files will be saved in your selected experimental folder, e.g. ...solenoid_order_230718-131507.csv" means that the odor delivery experiment was started on July 18, 2023 at 13:15:07 pm.  
+12. Solenoid order and timing csv files will be saved in your selected experimental folder, e.g. `...solenoid_order_230718-131507.csv` means that the odor delivery experiment was started on July 18, 2023 at 13:15:07 pm.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/csv_files.png)
