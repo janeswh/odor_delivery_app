@@ -35,7 +35,7 @@ class ArduinoSession(UserControl):
             # label="Script output log",
             multiline=True,
             max_lines=4,
-            min_lines=3,
+            min_lines=4,
             read_only=True,
             value="",
             text_size=12,
@@ -325,7 +325,7 @@ class ArduinoSession(UserControl):
         print("generate_arduino_str called")
         if self.trig_signal == True:
             self.progress_bar_text.value = (
-                f"Press Start on Thor Images to start odor delivery"
+                f"Press Start/Run on Thor Images to start odor delivery"
             )
             for trial in range(len(self.solenoid_order)):
                 self.progress_bar.value = trial * (
@@ -376,7 +376,7 @@ class ArduinoSession(UserControl):
         print("generate_arduino_str called")
         if self.trig_signal == True:
             self.progress_bar_text.value = (
-                f"Press Start on Thor Images to start odor delivery"
+                f"Press Start/Run on Thor Images to start odor delivery"
             )
             for trial in range(len(self.solenoid_order)):
                 self.progress_bar.value = trial * (
