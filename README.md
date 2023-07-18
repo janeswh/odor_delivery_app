@@ -20,7 +20,7 @@ This app interfaces between the Arduino board and ThorImages software to control
 5. Once ThorImages starts, the app will display a progress bar showing each step of odor delivery.
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/progress.png)
 
-6. You can click on "Show output log" to see a scrollable box containing a timestamped history of the odor delivery steps.
+6. You can click on "Show output log" to see a scrollable box containing a timestamped history of the odor delivery steps.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/log.png)
 
 7. Once the experiment is finished, the solenoid timings will be saved to a csv file in the experime folder, and a dialogue box will display:
