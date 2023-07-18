@@ -75,8 +75,6 @@ class ArduinoSession(UserControl):
         self.sent = 0
 
         self.time_scope_TTL = []
-
-        # self.generate_arduino_str()
         self.open_port()
         self.update()
 
@@ -114,95 +112,6 @@ class ArduinoSession(UserControl):
 
         return arduino_msg
 
-    def parse_arduino_msg_test(self, trial, solenoid):
-        """
-        Test version without actual arduino input
-        """
-        time_TTL = datetime.datetime.now().isoformat(
-            "|", timespec="milliseconds"
-        )
-        self.time_scope_TTL.append(time_TTL)
-
-        self.arduino_step_text.value = (
-            f"trial {trial+1}, odor "
-            f"{solenoid} microscope triggered at {time_TTL}"
-        )
-
-        print(
-            f"trial {trial+1}, odor {solenoid} microscope triggered at "
-            f"{time_TTL}"
-        )
-
-        self.output_log.value = (
-            self.output_log.value + "\n" + self.arduino_step_text.value
-        )
-        print(f"output log value is {self.output_log.value}")
-
-        self.update()
-        time.sleep(1)
-
-        time_solenoid_on = datetime.datetime.now().isoformat(
-            "|", timespec="milliseconds"
-        )
-        self.time_solenoid_on.append(time_solenoid_on)
-        self.arduino_step_text.value = (
-            f"trial {trial+1}, odor "
-            f"{solenoid} released at {time_solenoid_on}"
-        )
-
-        print(
-            f"trial {trial+1}, odor {solenoid} released at "
-            f"{time_solenoid_on}"
-        )
-
-        self.output_log.value = (
-            self.output_log.value + "\n" + self.arduino_step_text.value
-        )
-        print(f"output log value is {self.output_log.value}")
-
-        self.update()
-        time.sleep(1)
-
-        time_solenoid_off = datetime.datetime.now().isoformat(
-            "|", timespec="milliseconds"
-        )
-        self.time_solenoid_off.append(time_solenoid_off)
-        self.arduino_step_text.value = (
-            f"trial {trial+1}, odor "
-            f"{solenoid} stopped at {time_solenoid_off}"
-        )
-
-        print(
-            f"trial {trial+1}, odor {solenoid} stopped at "
-            f"{time_solenoid_off}"
-        )
-
-        self.output_log.value = (
-            self.output_log.value + "\n" + self.arduino_step_text.value
-        )
-        print(f"output log value is {self.output_log.value}")
-
-        self.update()
-        time.sleep(1)
-
-        self.arduino_step_text.value = (
-            f"trial {trial+1}, odor "
-            f"{solenoid} delay stopped, send next solenoid info"
-        )
-
-        print(
-            f"trial {trial+1}, odor {solenoid} delay stopped, send next "
-            "solenoid info"
-        )
-
-        self.output_log.value = (
-            self.arduino_step_text.value + "\n" + self.output_log.value
-        )
-        print(f"output log value is {self.output_log.value}")
-
-        self.sent = 0
-        self.update()
-
     def parse_arduino_msg(self, trial, solenoid):
         """
         Translates the message sent back from arduino into informative
@@ -210,7 +119,6 @@ class ArduinoSession(UserControl):
         """
         arduino_msg = self.get_arduino_msg()
         print(arduino_msg)
-        # self.arduino_step_text.value = ""
 
         # Update: check if y is anywhere in the messageReceived in case
         # arduino sends too many at once
@@ -273,7 +181,7 @@ class ArduinoSession(UserControl):
                 )
 
                 self.update_log(trial + 1, solenoid, "2", time_solenoid_off)
-                self.save_solenoid_timings_test(trial)
+                self.save_solenoid_timings(trial)
 
             elif arduino_msg == "3":
                 self.arduino_step_text.value = (
@@ -336,7 +244,6 @@ class ArduinoSession(UserControl):
                 print(f"doing trial {trial+1}")
 
                 to_be_sent = (
-                    # f"{solenoid},{self.acq_params.odor_duration},"
                     f"<{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
                     f"{self.acq_params['time_btw_odors']}>"
                 )
@@ -344,58 +251,7 @@ class ArduinoSession(UserControl):
                 self.sent = 1
 
                 # Send the information to arduino and wait for something to come back
-                # st.session_state.arduino.write(to_be_sent.encode())
-                self.arduino.write(to_be_sent.encode())
-                print(f"to be sent is {to_be_sent}")
 
-                while self.sent == 1:
-                    self.parse_arduino_msg(
-                        trial,
-                        self.solenoid_order[trial],
-                    )
-
-                    self.update()
-
-            self.sequence_complete = True
-            self.trig_signal = False
-            self.progress_bar.value = len(self.solenoid_order) * (
-                1 / len(self.solenoid_order)
-            )
-
-            self.progress_bar_text.value = "Odor delivery sequence complete."
-            self.close_port()
-            self.update()
-
-    def thread_generate_arduino_str(self):
-        """
-        Generates arduino execution strs in format "x, y, z" where
-        x = solenoid number
-        y = odor duration (s)
-        z = time between odors (s)
-        """
-
-        print("generate_arduino_str called")
-        if self.trig_signal == True:
-            self.progress_bar_text.value = (
-                f"Press Start/Run on Thor Images to start odor delivery"
-            )
-            for trial in range(len(self.solenoid_order)):
-                self.progress_bar.value = trial * (
-                    1 / len(self.solenoid_order)
-                )
-                self.update()
-                print(f"doing trial {trial+1}")
-
-                to_be_sent = (
-                    # f"{solenoid},{self.acq_params.odor_duration},"
-                    f"<{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
-                    f"{self.acq_params['time_btw_odors']}>"
-                )
-
-                self.sent = 1
-
-                # Send the information to arduino and wait for something to come back
-                # st.session_state.arduino.write(to_be_sent.encode())
                 self.arduino.write(to_be_sent.encode())
                 print(f"to be sent is {to_be_sent}")
 
@@ -405,8 +261,6 @@ class ArduinoSession(UserControl):
                         trial,
                         self.solenoid_order[trial],
                     )
-
-                    # self.save_solenoid_timings_test(trial)
 
                     self.update()
 
@@ -419,9 +273,7 @@ class ArduinoSession(UserControl):
                     "Reset Settings to start a new experiment, or Start "
                     "Experiment to redo the same odor sequence."
                 )
-                # self.close_port()
-                # self.update()
-                # break
+
             else:
                 self.sequence_complete = True
                 self.trig_signal = False
@@ -432,15 +284,13 @@ class ArduinoSession(UserControl):
                 self.progress_bar_text.value = (
                     "Odor delivery sequence complete."
                 )
-                # self.close_port()
-                # self.update()
 
             self.close_port()
             self.update()
 
             timings_name = (
                 f"{self.date}_{self.animal_id}_"
-                f"{self.roi}_solenoid_timings.csv"
+                f"{self.roi}_solenoid_timings_{self.csv_time}.csv"
             )
 
             self.page.snack_bar.content.value = (
@@ -453,107 +303,7 @@ class ArduinoSession(UserControl):
             self.page.snack_bar.open = True
             self.page.update()
 
-    def generate_arduino_str_test(self):
-        """
-        Generates arduino execution strs in format "x, y, z" where
-        x = solenoid number
-        y = odor duration (s)
-        z = time between odors (s)
-        """
-        self.trig_signal = True  # for testing only
-        if self.trig_signal == True:
-            for trial in range(len(self.solenoid_order)):
-                if trial == 0:
-                    self.progress_bar_text.value = (
-                        f"Press Start on Thor Images to start Trial {trial+1}/"
-                        f"{len(self.solenoid_order)}"
-                    )
-                else:
-                    self.progress_bar_text.value = (
-                        f"Executing Trial {trial+1}/"
-                        f"{len(self.solenoid_order)}"
-                    )
-                self.progress_bar.value = trial * (
-                    1 / len(self.solenoid_order)
-                )
-                self.update()
-                print(f"doing trial {trial+1}")
-
-                to_be_sent = (
-                    # f"{solenoid},{self.acq_params.odor_duration},"
-                    f"{self.solenoid_order[trial]},{self.acq_params['odor_duration']},"
-                    f"{self.acq_params['time_btw_odors']}"
-                )
-
-                self.sent = 1
-
-                # Send the information to arduino and wait for something to come back
-                # st.session_state.arduino.write(to_be_sent.encode())
-                # self.arduino.write(to_be_sent.encode())
-
-                while self.sent == 1:
-                    self.parse_arduino_msg_test(
-                        trial,
-                        self.solenoid_order[trial],
-                    )
-
-                    # # Mark end after last trial
-                    # if trial + 1 == len(bar):
-                    self.update()
-
-            self.sequence_complete = True
-            self.trig_signal = False
-            self.progress_bar.value = len(self.solenoid_order) * (
-                1 / len(self.solenoid_order)
-            )
-
-            self.progress_bar_text.value = "Odor delivery sequence complete."
-            # self.close_port()
-            self.update()
-
-    def save_solenoid_timings(self):
-        """
-        Saves the timestamps for when each solenoid was triggered, opened,
-        and closed to a .csv file.
-        """
-        if self.stop_threads.is_set():
-            pass
-        else:
-            csv_name = (
-                f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
-                f"{self.csv_time}.csv"
-            )
-            path = os.path.join(self.directory_path, csv_name)
-
-            trial_labels = list(range(1, len(self.solenoid_order) + 1))
-            timings_df = pd.DataFrame(
-                {
-                    "Trial": trial_labels,
-                    "Odor #": self.solenoid_order,
-                    "Microscope Triggered": self.time_scope_TTL,
-                    "Solenoid opened": self.time_solenoid_on,
-                    "Solenoid closed": self.time_solenoid_off,
-                }
-            )
-
-            timings_df.to_csv(path, index=False)
-
-            timings_name = (
-                f"{self.date}_{self.animal_id}_"
-                f"{self.roi}_solenoid_timings.csv"
-            )
-
-            self.page.snack_bar.content.value = (
-                f"Solenoid timings "
-                f"saved to "
-                f"{timings_name} in "
-                f"experiment "
-                f"directory."
-            )
-            self.page.snack_bar.open = True
-            self.page.update()
-
-    def save_solenoid_timings_test(self, trial):
+    def save_solenoid_timings(self, trial):
         """
         Saves the timestamps for when each solenoid was triggered, opened,
         and closed to a .csv file.
@@ -588,16 +338,6 @@ class ArduinoSession(UserControl):
             f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
             f"{self.csv_time}.csv"
         )
-
-        # self.page.snack_bar.content.value = (
-        #     f"Solenoid timings "
-        #     f"saved to "
-        #     f"{timings_name} in "
-        #     f"experiment "
-        #     f"directory."
-        # )
-        # self.page.snack_bar.open = True
-        # self.page.update()
 
     def show_output_log(self, e):
         """"""

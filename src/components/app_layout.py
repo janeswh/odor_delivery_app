@@ -344,30 +344,8 @@ class OdorDeliveryApp(UserControl):
             2
         ].controls.append(self.abort_btn)
         self.update()
-        # pdb.set_trace()
+
         self.start_arduino_session()
-        # self.fake_arduino_session()
-
-    def fake_arduino_session(self):
-        self.arduino_session.generate_arduino_str_test()
-
-        self.arduino_session.save_solenoid_timings()
-
-        timings_name = (
-            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings.csv"
-        )
-
-        self.page.snack_bar.content.value = (
-            f"Solenoid timings "
-            f"saved to "
-            f"{timings_name} in "
-            f"experiment "
-            f"directory."
-        )
-        self.page.snack_bar.open = True
-        self.page.update()
-
-        self.prompt_new_exp()
 
     def start_arduino_session(self):
         if self.arduino_session.trig_signal is False:
@@ -380,13 +358,12 @@ class OdorDeliveryApp(UserControl):
                 if "y" in arduino_msg:
                     print("Arduino is conencted")
                     self.arduino_session.trig_signal = True
-                    # self.arduino_session.generate_arduino_str()
+
                     thread = Thread(
-                        target=self.arduino_session.thread_generate_arduino_str
+                        target=self.arduino_session.generate_arduino_str
                     )
                     thread.start()
                     thread.join()
-                    # self.arduino_session.save_solenoid_timings()
 
                     self.arduino_session.trig_signal = False
 
@@ -442,9 +419,6 @@ class OdorDeliveryApp(UserControl):
         self.page.update()
 
     def abort_clicked(self, e):
-        # self.reset_clicked(e)
-        # self.close_newexp_dlg(e)
-
         """
         Shows dialog informing user that experiment has finished.
         """
