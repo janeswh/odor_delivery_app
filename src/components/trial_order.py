@@ -84,7 +84,7 @@ class TrialOrderTable(UserControl):
         # )
 
         self.exp_display_content.content = Row(
-            controls=[self.simple_dt], scroll="auto"
+            controls=[self.simple_dt], scroll="always"
         )
 
         self.update()
