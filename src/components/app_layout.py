@@ -452,9 +452,14 @@ class OdorDeliveryApp(UserControl):
 
         path = os.path.join(self.directory_path.value, csv_name)
 
-        self.trial_table.trials_df.to_csv(
-            path, header=["Odor #"], index_label="Trial"
-        )
+        # sort trial order info by odor #
+        sorted_df = self.trial_table.trials_df.copy()
+        sorted_df["Trial"] = range(1, len(sorted_df) + 1)
+        sorted_df.columns = sorted_df.columns.astype(str)
+        sorted_df.rename(columns={"0": "Odor"}, inplace=True)
+        sorted_df.sort_values(by=["Odor"], inplace=True)
+
+        sorted_df.to_csv(path, index=False)
 
         self.page.snack_bar.content.value = (
             f"Solenoid info saved to {csv_name} in experiment directory."
