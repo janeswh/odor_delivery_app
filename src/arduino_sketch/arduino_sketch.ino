@@ -6,7 +6,7 @@
 int triggerTime = 400; //how long you've set the Arduino to receive a trigger and how long the arduino waits for it -- for timing purposes only
 
 // Initiate the solenoid pins, with offsets of 1 because pins 0 and 1 cannot be used
-const int analogInPin = 15; //set up digital input on pin 14
+const int analogInPin = 14; //set up digital input on pin 14
 const int solenoidPin1 = 2;
 const int solenoidPin2 = 3;
 const int solenoidPin3 = 4;
@@ -165,6 +165,9 @@ void recvWithStartEndMarkers() {
         else if (rc == startMarker) {
             recvInProgress = true;
         }
+
+        // Serial.print("newData ");
+        // Serial.println(newData);
     }
 }
 
@@ -234,26 +237,29 @@ void executeSolenoid() {
             //   because strtok() used in parseData() replaces the commas with \0
         parseData();
         showParsedData();
+        
+    
+
+        if (pinSet > 1){
+            checkTrigger(); //wait for microscope trigger
+            Serial.println("9"); //tells python when the microscope has been triggered
+            digitalWrite(microscopeTrigger, HIGH); //trigger the microscope
+            delay(100);
+            digitalWrite(microscopeTrigger, LOW); 
+            delayMillis(); //wait 4 seconds after the microscope has been triggered to establish baseline
+            Serial.println("1"); //tells python the odor has been released
+            odorOn(); //releases the odor for a certain time
+            Serial.println("2"); //tells python the odor has been stopped
+            delayOn(); //delay occurs after the odor
+            Serial.println("3"); //tells python the delay has been finished, to send the next set of numbers
+        }
+  
+        else {
+            ardTrigger = 0;
+        }
+
         newData = false;
     }
-
-  if (pinSet > 1){
-    checkTrigger(); //wait for microscope trigger
-    Serial.println("9"); //tells python when the microscope has been triggered
-    digitalWrite(microscopeTrigger, HIGH); //trigger the microscope
-    delay(100);
-    digitalWrite(microscopeTrigger, LOW); 
-    delayMillis(); //wait 4 seconds after the microscope has been triggered to establish baseline
-    Serial.println("1"); //tells python the odor has been released
-    odorOn(); //releases the odor for a certain time
-    Serial.println("2"); //tells python the odor has been stopped
-    delayOn(); //delay occurs after the odor
-    Serial.println("3"); //tells python the delay has been finished, to send the next set of numbers
-  }
-  
-  else {
-    ardTrigger = 0;
-  }
 }
 
 
