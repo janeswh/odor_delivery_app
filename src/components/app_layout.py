@@ -27,9 +27,10 @@ from threading import Thread
 class OdorDeliveryApp(UserControl):
     def __init__(self, page: Page):
         super().__init__()
+        self.port = None
         self.csv_time = None
         self.page = page
-        self.upload_arduino()
+        # self.upload_arduino()
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text("Snack bar init"), bgcolor=ft.colors.SECONDARY
         )
@@ -79,18 +80,60 @@ class OdorDeliveryApp(UserControl):
 
     def upload_arduino(self):
         # Compiles and uploads arduino sketch
+
+        self.page.snack_bar.content.value = "Uploading sketch to Arduino..."
+        self.page.snack_bar.open = True
+        self.page.update()
+
         arduino_cli_path = resolve_path("resources/arduino-cli.exe")
         arduino_instance = pyduinocli.Arduino(arduino_cli_path)
+        fqbn = "arduino:avr:mega"
 
         # brds = arduino_instance.board.list()
         # port = brds["result"][2]["port"]["address"]
         # fqbn = brds["result"][2]["matching_boards"][0]["fqbn"]
-        sketch_path = resolve_path("arduino_sketch")
 
-        port = "COM7"
-        fqbn = "arduino:avr:mega"
-        arduino_instance.compile(fqbn=fqbn, sketch=sketch_path)
-        arduino_instance.upload(fqbn=fqbn, sketch=sketch_path, port=port)
+        # sketch_path = resolve_path("arduino_sketch")
+        # blank_sketch_path = resolve_path("blank_sketch")
+
+        # if self.panel_type == "1%":
+        #     self.port = "COM8"
+        #     self.blank_port = "COM7"
+        # elif self.panel_type == "10%":
+        #     self.port = "COM7"
+        #     self.blank_port = "COM8"
+
+        # self.port = "COM8"
+
+        # arduino_instance.compile(fqbn=fqbn, sketch=sketch_path)
+        # arduino_instance.upload(fqbn=fqbn, sketch=sketch_path, port=self.port)
+
+        # # uploads blank sketch to unused COM port
+        # arduino_instance.compile(fqbn=fqbn, sketch=blank_sketch_path)
+        # arduino_instance.upload(
+        #     fqbn=fqbn, sketch=blank_sketch_path, port=self.blank_port
+        # )
+
+        # Define ports and arduino sketches
+        arduino_ports_dict = {
+            "1%": {"active": "COM8", "inactive": "COM7"},
+            "10%": {"active": "COM7", "inactive": "COM8"},
+        }
+
+        arduino_sketch_dict = {
+            "active": "arduino_sketch",
+            "inactive": "blank_sketch",
+        }
+
+        # Selects port based on odor panel type and uploads sketches
+        for port_type in arduino_ports_dict[self.panel_type].keys():
+            sketch_path = resolve_path(arduino_sketch_dict[port_type])
+            arduino_instance.compile(fqbn=fqbn, sketch=sketch_path)
+            arduino_instance.upload(
+                fqbn=fqbn,
+                sketch=sketch_path,
+                port=arduino_ports_dict[self.panel_type][port_type],
+            )
 
     def make_app_layout(self):
         self.settings_title = Text(
@@ -116,7 +159,7 @@ class OdorDeliveryApp(UserControl):
 
         self.page.horizontal_alignment = ft.CrossAxisAlignment.START
         self.page.window_width = 600
-        self.page.window_height = 850
+        self.page.window_height = 900
         self.page.window_resizable = False
         self.pick_directory_layout = ft.ResponsiveRow(
             [
@@ -189,6 +232,7 @@ class OdorDeliveryApp(UserControl):
         # self.roi = self.settings_fields.roi.text_field.value
         # self.date = now_date.strftime("%y%m%d")
 
+        self.panel_type = self.settings_fields.panel_type.value
         self.num_odors = int(self.settings_fields.num_odors.value)
         self.num_trials = int(self.settings_fields.num_trials.text_field.value)
         self.odor_duration = int(
@@ -203,6 +247,7 @@ class OdorDeliveryApp(UserControl):
             "mouse": self.animal_id,
             "roi": self.roi,
             "date": self.date,
+            "panel_type": self.panel_type,
             "num_odors": self.num_odors,
             "num_trials": self.num_trials,
             "odor_duration": self.odor_duration,
@@ -284,6 +329,7 @@ class OdorDeliveryApp(UserControl):
         if (
             ""
             in [
+                self.settings_fields.panel_type.value,
                 self.settings_fields.num_odors.value,
                 self.settings_fields.num_trials.text_field.value,
                 self.settings_fields.odor_duration.text_field.value,
@@ -306,11 +352,12 @@ class OdorDeliveryApp(UserControl):
         self.update()
 
     def start_clicked(self, e):
+        self.start_button.disabled = True
         self.reset_settings_btn.disabled = True
         if self.randomize_option.value is True:
             self.randomize_button.disabled = True
-        self.start_button.disabled = True
         self.abort_btn.disabled = False
+        self.upload_arduino()
         self.csv_time = datetime.now().strftime("%y%m%d-%H%M%S")
 
         self.save_solenoid_info()
@@ -324,6 +371,7 @@ class OdorDeliveryApp(UserControl):
                 self.app_layout.controls.remove(control)
 
         self.arduino_session = ArduinoSession(
+            self.panel_type,
             self.csv_time,
             self.page,
             self.settings_dict,
@@ -378,6 +426,7 @@ class OdorDeliveryApp(UserControl):
             and self.arduino_session.sequence_complete is True
         ):
             self.arduino_session.close_port()
+            self.port = None
             print("arduino closed")
 
         self.abort_btn.disabled = True
@@ -456,8 +505,10 @@ class OdorDeliveryApp(UserControl):
         sorted_df = self.trial_table.trials_df.copy()
         sorted_df["Trial"] = range(1, len(sorted_df) + 1)
         sorted_df.columns = sorted_df.columns.astype(str)
-        sorted_df.rename(columns={"0": "Odor"}, inplace=True)
-        sorted_df.sort_values(by=["Odor"], inplace=True)
+        sorted_df.rename(
+            columns={"0": f"Odor {self.panel_type}"}, inplace=True
+        )
+        sorted_df.sort_values(by=[f"Odor {self.panel_type}"], inplace=True)
 
         sorted_df.to_csv(path, index=False)
 

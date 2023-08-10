@@ -12,11 +12,12 @@ from threading import Thread, Event
 
 
 class ArduinoSession(UserControl):
-    def __init__(self, csv_time, page, settings, odor_sequence):
+    def __init__(self, panel_type, csv_time, page, settings, odor_sequence):
         """
         Defines the class for holding signals sent to the arduino per session
         """
         super().__init__()
+        self.panel_type = panel_type
         self.csv_time = csv_time
         self.page = page
         self.acq_params = settings
@@ -84,14 +85,20 @@ class ArduinoSession(UserControl):
         """
         self.arduino = serial.Serial()
 
-        self.arduino.port = "COM7"  # Change COM PORT if COMPort error occurs
+        if self.panel_type == "1%":
+            self.port = "COM8"
+        elif self.panel_type == "10%":
+            self.port = "COM7"
+
+        # self.arduino.port = "COM8"  # Change COM PORT if COMPort error occurs
+        self.arduino.port = self.port
         self.arduino.baudrate = 9600
         self.arduino.timeout = 2
         self.arduino.setRTS(False)
 
         self.arduino.open()
         self.port_opened = True
-        self.progress_bar_text.value = "Arduino port opened."
+        self.progress_bar_text.value = f"Arduino port {self.port} opened."
 
     def close_port(self):
         """
@@ -231,7 +238,6 @@ class ArduinoSession(UserControl):
         z = time between odors (s)
         """
 
-        print("generate_arduino_str called")
         if self.trig_signal == True:
             self.progress_bar_text.value = (
                 f"Press Start/Run on Thor Images to start odor delivery"
@@ -323,7 +329,9 @@ class ArduinoSession(UserControl):
             timings_df = pd.DataFrame(
                 {
                     "Trial": trial_labels,
-                    "Odor #": self.solenoid_order[: trial + 1],
+                    f"Odor {self.panel_type}": self.solenoid_order[
+                        : trial + 1
+                    ],
                     "Microscope Triggered": self.time_scope_TTL,
                     "Solenoid opened": self.time_solenoid_on,
                     "Solenoid closed": self.time_solenoid_off,

@@ -20,6 +20,9 @@ class SettingsFields(UserControl):
         self.textfield_dict = {
             # "Animal ID": {"value": ""},
             # "ROI": {"value": ""},
+            "Odor panel type": {
+                "value": "",
+            },
             "# Trials/odor": {"value": ""},
             "Odor duration (s)": {"value": "1"},
             "Time between odors (s)": {"value": "10"},
@@ -67,6 +70,19 @@ class SettingsLayout(UserControl):
         # )
 
         # self.roi = SettingsFields(label="ROI", on_change=check_complete)
+
+        self.panel_type = ft.Dropdown(
+            value="",
+            label="Odor panel type",
+            options=[ft.dropdown.Option("1%"), ft.dropdown.Option("10%")],
+            # alignment=ft.alignment.center,
+            col={"sm": 4},
+            on_change=check_complete,
+            border_color=ft.colors.SECONDARY_CONTAINER,
+            border_width=1,
+            focused_border_color=ft.colors.SURFACE_TINT,
+            focused_border_width=2,
+        )
 
         self.num_odors = ft.Dropdown(
             value="",
@@ -136,25 +152,26 @@ class SettingsLayout(UserControl):
 
         self.row1 = ft.ResponsiveRow(
             [
+                Column(col={"sm": 3}, controls=[self.panel_type]),
                 Column(col={"sm": 3}, controls=[self.num_odors]),
                 Column(col={"sm": 3}, controls=[self.num_trials]),
+                # Column(col={"sm": 3}, controls=[self.odor_duration]),
+                # Column(col={"sm": 3}, controls=[self.time_btw_odors]),
+            ]
+        )
+
+        self.row2 = ft.ResponsiveRow(
+            [
                 Column(col={"sm": 3}, controls=[self.odor_duration]),
                 Column(col={"sm": 3}, controls=[self.time_btw_odors]),
             ]
         )
 
-        # self.row2 = ft.ResponsiveRow(
-        #     [
-        #         Column(col={"sm": 4}, controls=[self.odor_duration]),
-        #         Column(col={"sm": 4}, controls=[self.time_btw_odors]),
-        #         Column(col={"sm": 4}, controls=[self.num_trials]),
-        #     ]
-        # )
-
     def reset_settings_clicked(self, e):
         self.settings_dict = None
         # self.animal_id.reset()
         # self.roi.reset()
+        self.panel_type.value = ""
         self.num_odors.value = ""
         self.num_trials.reset()
         self.odor_duration.reset()
@@ -167,6 +184,7 @@ class SettingsLayout(UserControl):
     def disable_settings_fields(self, disable):
         # self.animal_id.disabled = disable
         # self.roi.disabled = disable
+        self.panel_type.disabled = disable
         self.num_odors.disabled = disable
         self.num_trials.disabled = disable
         self.odor_duration.disabled = disable
@@ -178,6 +196,6 @@ class SettingsLayout(UserControl):
         return ft.Column(
             controls=[
                 self.row1,
-                # self.row2,
+                self.row2,
             ],
         )
