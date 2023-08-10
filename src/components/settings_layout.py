@@ -51,10 +51,7 @@ class SettingsFields(UserControl):
 
 class SettingsLayout(UserControl):
     def __init__(
-        self,
-        page: Page,
-        directory_path,
-        check_complete,
+        self, page: Page, directory_path, check_complete, update_parent
     ):
         super().__init__()
 
@@ -63,18 +60,45 @@ class SettingsLayout(UserControl):
         self.settings_dict = None
         self.saved_click = False
 
-        # self.animal_id = SettingsFields(
-        #     # ref=self.textfield1_ref,
-        #     label="Animal ID",
-        #     on_change=check_complete,
-        # )
+        self.create_settings_fields(check_complete, update_parent)
+        self.arrange_settings_fields()
 
-        # self.roi = SettingsFields(label="ROI", on_change=check_complete)
-
+    def create_settings_fields(self, check_complete, update_parent):
         self.panel_type = ft.Dropdown(
             value="",
             label="Odor panel type",
             options=[ft.dropdown.Option("1%"), ft.dropdown.Option("10%")],
+            # alignment=ft.alignment.center,
+            col={"sm": 4},
+            on_change=check_complete,
+            border_color=ft.colors.SECONDARY_CONTAINER,
+            border_width=1,
+            focused_border_color=ft.colors.SURFACE_TINT,
+            focused_border_width=2,
+        )
+
+        self.trial_type = ft.Dropdown(
+            value="Multiple",
+            label="Type of trials",
+            options=[
+                ft.dropdown.Option("Single"),
+                ft.dropdown.Option("Multiple"),
+            ],
+            # alignment=ft.alignment.center,
+            col={"sm": 4},
+            on_change=lambda e: self.trial_type_changed(
+                e, update_parent, check_complete
+            ),
+            border_color=ft.colors.SECONDARY_CONTAINER,
+            border_width=1,
+            focused_border_color=ft.colors.SURFACE_TINT,
+            focused_border_width=2,
+        )
+
+        self.single_odor = ft.Dropdown(
+            value="1",
+            label="Single trial odor",
+            options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
             # alignment=ft.alignment.center,
             col={"sm": 4},
             on_change=check_complete,
@@ -106,85 +130,62 @@ class SettingsLayout(UserControl):
             label="Time between odors (s)", on_change=check_complete
         )
 
-        # self.create_settings_fields()
-        self.arrange_settings_fields()
-
-    def create_settings_fields(self):
-        # self.textfield1_ref = Ref[SettingsFields]()
-        # self.animal_id = SettingsFields(
-        #     # ref=self.textfield1_ref,
-        #     label="Animal ID",
-        #     on_change=self.check_settings_complete,
-        # )
-
-        # self.roi = SettingsFields(
-        #     label="ROI", on_change=self.check_settings_complete
-        # )
-
-        self.num_odors = ft.Dropdown(
-            value="",
-            label="# of odors",
-            options=[ft.dropdown.Option(f"{odor}") for odor in range(1, 9)],
-            # alignment=ft.alignment.center,
-            col={"sm": 4},
-            on_change=self.check_settings_complete,
-        )
-        self.num_trials = SettingsFields(
-            label="# Trials/odor", on_change=self.check_settings_complete
-        )
-        self.odor_duration = SettingsFields(
-            label="Odor duration (s)", on_change=self.check_settings_complete
-        )
-        self.time_btw_odors = SettingsFields(
-            label="Time between odors (s)",
-            on_change=self.check_settings_complete,
-        )
-
     # Arranges setting fields in rows
-    def arrange_settings_fields(self):
-        # self.row1 = ft.ResponsiveRow(
-        #     [
-        #         Column(col={"sm": 4}, controls=[self.animal_id]),
-        #         Column(col={"sm": 4}, controls=[self.roi]),
-        #         Column(col={"sm": 4}, controls=[self.num_odors]),
-        #     ]
-        # )
+    def arrange_settings_fields(self, e=None):
+        if self.trial_type.value == "Single":
+            self.row1 = ft.ResponsiveRow(
+                [
+                    Column(col={"sm": 3}, controls=[self.panel_type]),
+                    Column(col={"sm": 3}, controls=[self.trial_type]),
+                    Column(col={"sm": 3}, controls=[self.single_odor]),
+                    Column(col={"sm": 3}, controls=[self.odor_duration]),
+                ]
+            )
 
-        self.row1 = ft.ResponsiveRow(
-            [
-                Column(col={"sm": 3}, controls=[self.panel_type]),
-                Column(col={"sm": 3}, controls=[self.num_odors]),
-                Column(col={"sm": 3}, controls=[self.num_trials]),
-                # Column(col={"sm": 3}, controls=[self.odor_duration]),
-                # Column(col={"sm": 3}, controls=[self.time_btw_odors]),
-            ]
-        )
+            self.row2 = ft.Container()
 
-        self.row2 = ft.ResponsiveRow(
-            [
-                Column(col={"sm": 3}, controls=[self.odor_duration]),
-                Column(col={"sm": 3}, controls=[self.time_btw_odors]),
-            ]
-        )
+        if self.trial_type.value == "Multiple":
+            self.row1 = ft.ResponsiveRow(
+                [
+                    Column(col={"sm": 3}, controls=[self.panel_type]),
+                    Column(col={"sm": 3}, controls=[self.trial_type]),
+                    Column(col={"sm": 3}, controls=[self.num_odors]),
+                ]
+            )
 
-    def reset_settings_clicked(self, e):
+            self.row2 = ft.ResponsiveRow(
+                [
+                    Column(col={"sm": 3}, controls=[self.num_trials]),
+                    Column(col={"sm": 3}, controls=[self.odor_duration]),
+                    Column(col={"sm": 3}, controls=[self.time_btw_odors]),
+                ]
+            )
+
+    def trial_type_changed(self, e, update_parent, check_complete):
+        self.arrange_settings_fields(e)
+        self.update()
+        update_parent(e)
+        check_complete(e)
+
+    def reset_settings_clicked(self, e, keep_paneltype=False):
         self.settings_dict = None
-        # self.animal_id.reset()
-        # self.roi.reset()
-        self.panel_type.value = ""
+        if keep_paneltype is False:
+            self.trial_type.value = "Multiple"
+            self.panel_type.value = ""
         self.num_odors.value = ""
         self.num_trials.reset()
         self.odor_duration.reset()
         self.time_btw_odors.reset()
 
+        self.arrange_settings_fields(e)
         self.disable_settings_fields(disable=False)
 
         self.update()
 
     def disable_settings_fields(self, disable):
-        # self.animal_id.disabled = disable
-        # self.roi.disabled = disable
         self.panel_type.disabled = disable
+        self.trial_type.disabled = disable
+        self.single_odor.disabled = disable
         self.num_odors.disabled = disable
         self.num_trials.disabled = disable
         self.odor_duration.disabled = disable

@@ -68,6 +68,7 @@ class OdorDeliveryApp(UserControl):
             self.page,
             self.directory_path,
             check_complete=self.check_settings_complete,
+            update_parent=self.update_trial_type_settings,
         )
 
         self.trial_table = None
@@ -88,31 +89,6 @@ class OdorDeliveryApp(UserControl):
         arduino_cli_path = resolve_path("resources/arduino-cli.exe")
         arduino_instance = pyduinocli.Arduino(arduino_cli_path)
         fqbn = "arduino:avr:mega"
-
-        # brds = arduino_instance.board.list()
-        # port = brds["result"][2]["port"]["address"]
-        # fqbn = brds["result"][2]["matching_boards"][0]["fqbn"]
-
-        # sketch_path = resolve_path("arduino_sketch")
-        # blank_sketch_path = resolve_path("blank_sketch")
-
-        # if self.panel_type == "1%":
-        #     self.port = "COM8"
-        #     self.blank_port = "COM7"
-        # elif self.panel_type == "10%":
-        #     self.port = "COM7"
-        #     self.blank_port = "COM8"
-
-        # self.port = "COM8"
-
-        # arduino_instance.compile(fqbn=fqbn, sketch=sketch_path)
-        # arduino_instance.upload(fqbn=fqbn, sketch=sketch_path, port=self.port)
-
-        # # uploads blank sketch to unused COM port
-        # arduino_instance.compile(fqbn=fqbn, sketch=blank_sketch_path)
-        # arduino_instance.upload(
-        #     fqbn=fqbn, sketch=blank_sketch_path, port=self.blank_port
-        # )
 
         # Define ports and arduino sketches
         arduino_ports_dict = {
@@ -225,22 +201,31 @@ class OdorDeliveryApp(UserControl):
         self.roi = folder.split("_")[1]
 
     def save_clicked(self, e):
-        # now_date = datetime.datetime.now()
         self.get_session_info()
 
-        # self.animal_id = self.settings_fields.animal_id.text_field.value
-        # self.roi = self.settings_fields.roi.text_field.value
-        # self.date = now_date.strftime("%y%m%d")
-
         self.panel_type = self.settings_fields.panel_type.value
-        self.num_odors = int(self.settings_fields.num_odors.value)
-        self.num_trials = int(self.settings_fields.num_trials.text_field.value)
+        self.trial_type = self.settings_fields.trial_type.value
         self.odor_duration = int(
             self.settings_fields.odor_duration.text_field.value
         )
-        self.time_btw_odors = int(
-            self.settings_fields.time_btw_odors.text_field.value
-        )
+
+        # Initialize variables
+        self.num_odors = None
+        self.num_trials = None
+        self.time_btw_odors = None
+        self.single_odor = None
+
+        if self.trial_type == "Multiple":
+            self.num_odors = int(self.settings_fields.num_odors.value)
+            self.num_trials = int(
+                self.settings_fields.num_trials.text_field.value
+            )
+            self.time_btw_odors = int(
+                self.settings_fields.time_btw_odors.text_field.value
+            )
+        elif self.trial_type == "Single":
+            self.single_odor = int(self.settings_fields.single_odor.value)
+            self.time_btw_odors = 10  # TODO: double-check this
 
         self.settings_dict = {
             "dir_path": self.directory_path.value,
@@ -248,6 +233,7 @@ class OdorDeliveryApp(UserControl):
             "roi": self.roi,
             "date": self.date,
             "panel_type": self.panel_type,
+            "single_odor": self.single_odor,
             "num_odors": self.num_odors,
             "num_trials": self.num_trials,
             "odor_duration": self.odor_duration,
@@ -260,17 +246,11 @@ class OdorDeliveryApp(UserControl):
 
         self.settings_fields.disable_settings_fields(disable=True)
 
-        # self.experiment_info_layout = ExperimentInfoLayout(
-        #     self.page,
-        #     self.randomize_option,
-        #     self.num_trials,
-        #     self.num_odors,
-        #     reset=False,
-        # )
-
         # Adds trial order table
         self.trial_table = TrialOrderTable(
             self.page,
+            self.trial_type,
+            self.single_odor,
             self.randomize_option.value,
             self.num_trials,
             self.num_odors,
@@ -300,8 +280,6 @@ class OdorDeliveryApp(UserControl):
 
         self.update()
 
-        print("trials table and buttons added")
-
     def reset_clicked(self, e):
         self.directory_path.value = None
         self.settings_dict = None
@@ -323,6 +301,27 @@ class OdorDeliveryApp(UserControl):
             if control in self.app_layout.controls:
                 self.app_layout.controls.remove(control)
 
+        self.update_trial_type_settings(e)
+        self.update()
+
+    def update_trial_type_settings(self, e):
+        # Clear residual settings from previous trial type selection
+        self.settings_fields.reset_settings_clicked(e, keep_paneltype=True)
+
+        self.settings_fields.controls[0].controls = [
+            self.settings_fields.row1,
+            self.settings_fields.row2,
+        ]
+
+        self.settings_fields.update()
+
+        if self.settings_fields.trial_type.value == "Single":
+            self.randomize_option.value = False
+            self.randomize_option.disabled = True
+        elif self.settings_fields.trial_type.value == "Multiple":
+            self.randomize_option.value = True
+            self.randomize_option.disabled = False
+
         self.update()
 
     def check_settings_complete(self, e=None):
@@ -330,17 +329,27 @@ class OdorDeliveryApp(UserControl):
             ""
             in [
                 self.settings_fields.panel_type.value,
-                self.settings_fields.num_odors.value,
-                self.settings_fields.num_trials.text_field.value,
                 self.settings_fields.odor_duration.text_field.value,
-                self.settings_fields.time_btw_odors.text_field.value,
             ]
-            or self.settings_fields.num_odors.value is None
             or self.directory_path.value is None
             or self.directory_path.value == ""
             or self.directory_path.value == "Cancelled!"
         ):
             self.save_settings_btn.disabled = True
+
+        elif (
+            ""
+            in [
+                self.settings_fields.num_odors.value,
+                self.settings_fields.num_trials.text_field.value,
+                self.settings_fields.time_btw_odors.text_field.value,
+            ]
+            or self.settings_fields.num_odors.value is None
+        ):
+            if self.settings_fields.trial_type.value == "Multiple":
+                self.save_settings_btn.disabled = True
+            else:
+                self.save_settings_btn.disabled = False
 
         else:
             self.save_settings_btn.disabled = False
@@ -404,7 +413,6 @@ class OdorDeliveryApp(UserControl):
             ):
                 arduino_msg = self.arduino_session.get_arduino_msg()
                 if "y" in arduino_msg:
-                    print("Arduino is conencted")
                     self.arduino_session.trig_signal = True
 
                     thread = Thread(
@@ -427,7 +435,6 @@ class OdorDeliveryApp(UserControl):
         ):
             self.arduino_session.close_port()
             self.port = None
-            print("arduino closed")
 
         self.abort_btn.disabled = True
         self.arduino_session.update()  # to show disabled button
@@ -440,7 +447,6 @@ class OdorDeliveryApp(UserControl):
         """
         Shows dialog informing user that experiment has finished.
         """
-        print("new exp dialog should open")
         self.exp_fin_dlg = ft.AlertDialog(
             modal=True,
             title=Text("Odor delivery completed."),
@@ -458,7 +464,6 @@ class OdorDeliveryApp(UserControl):
         self.page.dialog = self.exp_fin_dlg
         self.exp_fin_dlg.open = True
         self.page.update()
-        print("new exp dialog should open")
 
     def close_newexp_dlg(self, e):
         self.exp_fin_dlg.open = False

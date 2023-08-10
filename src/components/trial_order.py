@@ -12,9 +12,20 @@ import random
 
 
 class TrialOrderTable(UserControl):
-    def __init__(self, page, randomize, num_trials, num_odors, reset):
+    def __init__(
+        self,
+        page,
+        trial_type,
+        single_odor,
+        randomize,
+        num_trials,
+        num_odors,
+        reset,
+    ):
         super().__init__()
         self.page = page
+        self.trial_type = trial_type
+        self.single_odor = single_odor
 
         self.randomize = randomize
         self.exp_display_content = Container()
@@ -32,9 +43,12 @@ class TrialOrderTable(UserControl):
                 self.display_trial_order()
 
     def make_nonrandom_trials(self):
-        self.trials = self.trials = (
-            list(range(1, self.num_odors + 1)) * self.num_trials
-        )
+        if self.trial_type == "Single":
+            self.trials = [self.single_odor]
+        else:
+            self.trials = self.trials = (
+                list(range(1, self.num_odors + 1)) * self.num_trials
+            )
         self.update()
 
     def randomize_trials(self, repeat, e=None):
