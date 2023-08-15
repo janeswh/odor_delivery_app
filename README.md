@@ -18,7 +18,7 @@ This app interfaces between the Arduino board and ThorImages software to control
     - For the odor panel, select the Odor panel type, set Type of trials to Multiple, # of odors to 8 and #Trials/odor to 3. Typically you won't change the default odor duration of 1 or the default time between odors of 10.  
     ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step4_singleodor.png)
 
-    The Trial order will be displayed in a table below. If you need to change any settings, click "Reset Settings", enter new settings, and "Save" again. You can also click "Randomize Again" to shuffle the trial order.
+    The Trial order will be displayed in a table below. If you need to change any settings, click "Reset Settings", enter new settings, and "Save" again. You can also click "Randomize Again" to shuffle the trial order.  
     ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step4_trialorder.png)
 
     Once you're happy with all the settings, click "Start Experiment".  
