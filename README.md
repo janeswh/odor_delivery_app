@@ -12,11 +12,12 @@ This app interfaces between the Arduino board and ThorImages software to control
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step3.png)
 
 4. Enter your experiment settings and click "Save". 
-- To test odors, select the Odor panel type, set Type of trials to single, and Select the single trial odor number (e.g. 1 is ethyl butyrate). 
-![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step4_odorpanel.png)
-- For the odor panel, select the Odor panel type, set Type of trials to Multiple, # of odors to 8 and #Trials/odor to 3. 
-Typically you won't change the default odor duration of 1 or the default time between odors of 10. 
-![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step4_singleodor.png)
+    - To test odors, select the Odor panel type, set Type of trials to single, and Select the single trial odor number (e.g. 1 is ethyl butyrate). 
+    ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step4_odorpanel.png)
+
+    - For the odor panel, select the Odor panel type, set Type of trials to Multiple, # of odors to 8 and #Trials/odor to 3. 
+    Typically you won't change the default odor duration of 1 or the default time between odors of 10. 
+    ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step4_singleodor.png)
 
     The Trial order will be displayed in a table below. If you need to change any settings, click "Reset Settings", enter new settings, and "Save" again. You can also click "Randomize Again" to shuffle the trial order.
 
@@ -50,5 +51,5 @@ Typically you won't change the default odor duration of 1 or the default time be
 14. After you abort an experiment, you can either click "Reset Settings" to enter new settings, or just click "Start Experiment" again to rerun the experiment with unchanged settings.  
 ![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step14.png)
 
-15. Solenoid order and timing csv files will be saved in your selected experimental folder, e.g. `...solenoid_order_230718-131507.csv` means that the odor delivery experiment was started on July 18, 2023 at 13:15:07 pm.  
-![](https://github.com/janeswh/odor_delivery_app/blob/master/media/csv_files.png)
+15. Solenoid order and timing csv files will be saved in your selected experimental folder, e.g. `...solenoid_order_230810-095958.csv` means that the odor delivery experiment was started on August 10, 2023 at 09:59:58 am.  
+![](https://github.com/janeswh/odor_delivery_app/blob/master/media/step15.png)
