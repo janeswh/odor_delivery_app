@@ -2,6 +2,10 @@
 
 This app interfaces between the Arduino board and ThorImages software to control odor delivery to mice during *in vivo* imaging experiments.
 
+## Demo
+
+![](https://github.com/janeswh/odor_delivery_app/blob/master/media/demo.gif)
+
 ## Getting started
 
 1. Make sure ThorImage is running.
