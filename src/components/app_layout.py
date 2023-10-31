@@ -1,3 +1,5 @@
+"""Contains the OdorDeliveryApp class to contain the basic UI for the app."""
+
 import flet as ft
 from flet import (
     UserControl,
@@ -9,7 +11,6 @@ from flet import (
     Text,
     icons,
 )
-
 
 import os
 import pdb
@@ -25,9 +26,37 @@ from threading import Thread
 
 
 class OdorDeliveryApp(UserControl):
+    """Contains the skeleton structure for the Odor Delivery App.
+
+    The structure is populated with other UserControl classes for experiment
+    settings fields, trial order display, and experiment progress.
+
+    Attributes:
+        csv_time (str): Timestamp for saving the csv file.
+        page (ft.Page): The page that OdorDeliveryApp will be added to.
+        directory_path (str): Location of the experimental folder.
+        get_directory_dialog (ft.FilePicker): A control that prompts user to
+            select directory location.
+        settings_fields (ft.UserControl): A UserControl class that contains the
+            settings field for experimental settings.
+        trial_table (ft.UserControl): A UserControl class that contains the
+            odor/trial order displayed in a table.
+        divider1 (ft.Divider): A horizontal divider for layout purposes.
+        divider2 (ft.Divider): A horizontal divider for layout purposes.
+        arduino_session (ft.UserControl): A UserControl class containing the
+            signals sent to the arduino and all relevant experiment displays.
+    """
+
     def __init__(self, page: Page):
+        """Initializes an instance of OdorDeliveryApp to be added to the main
+        page of the app.
+
+        Args:
+            page: The page that OdorDeliveryApp will be added to.
+        """
+
         super().__init__()
-        self.port = None
+        # self.port = None
         self.csv_time = None
         self.page = page
         # self.upload_arduino()
@@ -116,9 +145,7 @@ class OdorDeliveryApp(UserControl):
             "Experiment Settings", style=ft.TextThemeStyle.HEADLINE_LARGE
         )
 
-        self.trials_title = Text(
-            "Trial Order", style=ft.TextThemeStyle.HEADLINE_LARGE
-        )
+        self.trials_title = Text("Trial Order", style=ft.TextThemeStyle.HEADLINE_LARGE)
 
         self.progress_title = Text(
             "Experiment Progress", style=ft.TextThemeStyle.HEADLINE_LARGE
@@ -127,9 +154,7 @@ class OdorDeliveryApp(UserControl):
         self.directory_prompt = Column(
             controls=[
                 Text("Select experiment folder to save solenoid info"),
-                Text(
-                    "Folder should be named in the format YYMMDD--123456-7-8_ROIX"
-                ),
+                Text("Folder should be named in the format YYMMDD--123456-7-8_ROIX"),
             ]
         )
 
@@ -205,9 +230,7 @@ class OdorDeliveryApp(UserControl):
 
         self.panel_type = self.settings_fields.panel_type.value
         self.trial_type = self.settings_fields.trial_type.value
-        self.odor_duration = int(
-            self.settings_fields.odor_duration.text_field.value
-        )
+        self.odor_duration = int(self.settings_fields.odor_duration.text_field.value)
 
         # Initialize variables
         self.num_odors = None
@@ -217,9 +240,7 @@ class OdorDeliveryApp(UserControl):
 
         if self.trial_type == "Multiple":
             self.num_odors = int(self.settings_fields.num_odors.value)
-            self.num_trials = int(
-                self.settings_fields.num_trials.text_field.value
-            )
+            self.num_trials = int(self.settings_fields.num_trials.text_field.value)
             self.time_btw_odors = int(
                 self.settings_fields.time_btw_odors.text_field.value
             )
@@ -397,9 +418,9 @@ class OdorDeliveryApp(UserControl):
         )
 
         self.update()
-        self.arduino_session.arduino_layout.content.controls[
-            2
-        ].controls.append(self.abort_btn)
+        self.arduino_session.arduino_layout.content.controls[2].controls.append(
+            self.abort_btn
+        )
         self.update()
 
         self.start_arduino_session()
@@ -415,9 +436,7 @@ class OdorDeliveryApp(UserControl):
                 if "y" in arduino_msg:
                     self.arduino_session.trig_signal = True
 
-                    thread = Thread(
-                        target=self.arduino_session.generate_arduino_str
-                    )
+                    thread = Thread(target=self.arduino_session.generate_arduino_str)
                     thread.start()
                     thread.join()
 
@@ -434,7 +453,7 @@ class OdorDeliveryApp(UserControl):
             and self.arduino_session.sequence_complete is True
         ):
             self.arduino_session.close_port()
-            self.port = None
+            # self.port = None
 
         self.abort_btn.disabled = True
         self.arduino_session.update()  # to show disabled button
@@ -510,9 +529,7 @@ class OdorDeliveryApp(UserControl):
         sorted_df = self.trial_table.trials_df.copy()
         sorted_df["Trial"] = range(1, len(sorted_df) + 1)
         sorted_df.columns = sorted_df.columns.astype(str)
-        sorted_df.rename(
-            columns={"0": f"Odor {self.panel_type}"}, inplace=True
-        )
+        sorted_df.rename(columns={"0": f"Odor {self.panel_type}"}, inplace=True)
         sorted_df.sort_values(by=[f"Odor {self.panel_type}"], inplace=True)
 
         sorted_df.to_csv(path, index=False)
