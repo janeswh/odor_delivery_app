@@ -34,7 +34,8 @@ class OdorDeliveryApp(UserControl):
     Attributes:
         csv_time (str): Timestamp for saving the csv file.
         page (ft.Page): The page that OdorDeliveryApp will be added to.
-        directory_path (str): Location of the experimental folder.
+        directory_path (ft.Text): Flet Textt object containing location of the
+            experimental folder.
         get_directory_dialog (ft.FilePicker): A control that prompts user to
             select directory location.
         settings_fields (ft.UserControl): A UserControl class that contains the
@@ -88,7 +89,6 @@ class OdorDeliveryApp(UserControl):
             on_result=self.get_directory_result,
         )
         self.page.overlay.append(self.get_directory_dialog)
-        self.directory_path = Text(col={"sm": 8})
         self.create_buttons()
 
         # Passes self.check_settings_complete() so that the child control
@@ -109,7 +109,10 @@ class OdorDeliveryApp(UserControl):
         self.page.update()
 
     def upload_arduino(self):
-        # Compiles and uploads arduino sketch
+        """Compiles and uploads arduino sketches.
+
+        Uploads blank sketch to whichever port isn't being used.
+        """
 
         self.page.snack_bar.content.value = "Uploading sketch to Arduino..."
         self.page.snack_bar.open = True
@@ -141,6 +144,8 @@ class OdorDeliveryApp(UserControl):
             )
 
     def make_app_layout(self):
+        """Sets up the initial layout of the odor delivery app."""
+
         self.settings_title = Text(
             "Experiment Settings", style=ft.TextThemeStyle.HEADLINE_LARGE
         )
@@ -193,11 +198,22 @@ class OdorDeliveryApp(UserControl):
         )
 
     def close_banner(self, e):
+        """Closes the error message banner.
+
+        Args:
+            e (event): on_click event from button clicking.
+        """
+
         self.page.banner.open = False
         self.page.update()
 
-    # Open directory dialog
     def get_directory_result(self, e: FilePickerResultEvent):
+        """Open directory picker dialog.
+
+        Args:
+            e (event): on_result event with directory path from the FilePicker.
+        """
+
         self.directory_path.value = e.path
 
         try:
@@ -220,13 +236,15 @@ class OdorDeliveryApp(UserControl):
         self.check_settings_complete()
 
     def get_session_info(self):
+        """Parses the directory folder for experiment session info."""
+
         folder = os.path.basename(self.directory_path.value)
         self.date = folder.split("--")[0]
         self.animal_id = folder.split("--")[1].split("_")[0]
         self.roi = folder.split("_")[1]
 
-    def save_clicked(self, e):
-        self.get_session_info()
+    def save_settings(self):
+        """Saves the user-input experiment settings to a dict."""
 
         self.panel_type = self.settings_fields.panel_type.value
         self.trial_type = self.settings_fields.trial_type.value
@@ -261,10 +279,20 @@ class OdorDeliveryApp(UserControl):
             "time_btw_odors": self.time_btw_odors,
             "randomize_trials": self.randomize_option.value,
         }
+
+    def save_clicked(self, e):
+        """Saves settings and populates app layout after clicking Save button.
+
+        Args:
+            e (event): on_result event from clicking Save Settings button.
+        """
+
+        self.get_session_info()
+        self.save_settings()
+
         self.save_settings_btn.disabled = True
         self.pick_directory_btn.disabled = True
         self.randomize_option.disabled = True
-
         self.settings_fields.disable_settings_fields(disable=True)
 
         # Adds trial order table
@@ -302,6 +330,13 @@ class OdorDeliveryApp(UserControl):
         self.update()
 
     def reset_clicked(self, e):
+        """Resets settings and resets button/input states, as well as clearing
+        outdated information from app layout.
+
+        Args:
+            e (event): on_result event from clicking Reset Settings button.
+        """
+
         self.directory_path.value = None
         self.settings_dict = None
         self.randomize_option.value = True
@@ -326,7 +361,12 @@ class OdorDeliveryApp(UserControl):
         self.update()
 
     def update_trial_type_settings(self, e):
-        # Clear residual settings from previous trial type selection
+        """Clears residual settings from previous trial type selection
+
+        Args:
+            e (event): on_result event from clicking Reset Settings button.
+        """
+
         self.settings_fields.reset_settings_clicked(e, keep_paneltype=True)
 
         self.settings_fields.controls[0].controls = [
@@ -346,6 +386,12 @@ class OdorDeliveryApp(UserControl):
         self.update()
 
     def check_settings_complete(self, e=None):
+        """Checks whether all settings fields have been filled out before
+        allowing experiment to proceed.
+
+        Args:
+            e (event): on_result event from clicking Reset Settings button.
+        """
         if (
             ""
             in [
@@ -378,10 +424,23 @@ class OdorDeliveryApp(UserControl):
         self.update()
 
     def randomize_trials_again(self, e):
+        """Randomizes trial order again.
+
+        Args:
+            e (event): on_result event from clicking Randomize Again button.
+        """
+
         self.trial_table.randomize_trials(repeat=True, e=None)
         self.update()
 
     def start_clicked(self, e):
+        """Uploads arduino sketch and retrieves arduino session layout for app.
+        Also saves the solenoid info to csv file.
+
+        Args:
+            e (event): on_result event from clicking Start Experiment button.
+        """
+
         self.start_button.disabled = True
         self.reset_settings_btn.disabled = True
         if self.randomize_option.value is True:
@@ -421,11 +480,15 @@ class OdorDeliveryApp(UserControl):
         self.arduino_session.arduino_layout.content.controls[2].controls.append(
             self.abort_btn
         )
-        self.update()
+        # self.update() # Don't need this I think
 
         self.start_arduino_session()
 
     def start_arduino_session(self):
+        """Starts the arduino session and sends signals to the arduino board
+        in a threaded process.
+        """
+
         if self.arduino_session.trig_signal is False:
             while (
                 self.arduino_session.trig_signal is False
@@ -459,24 +522,25 @@ class OdorDeliveryApp(UserControl):
         self.arduino_session.update()  # to show disabled button
 
     def new_exp_clicked(self, e):
+        """Resets settings fields for new experiment.
+
+        Args:
+            e (event): on_result event from clicking Yes to reset settings for
+            new experiments prompt.
+        """
+
         self.reset_clicked(e)
         self.close_newexp_dlg(e)
 
     def prompt_new_exp(self):
-        """
-        Shows dialog informing user that experiment has finished.
-        """
+        """Shows dialog informing user that experiment has finished."""
+
         self.exp_fin_dlg = ft.AlertDialog(
             modal=True,
             title=Text("Odor delivery completed."),
             content=Text("Reset settings for new experiment?"),
             actions=[
-                ft.TextButton(
-                    # "Yes", on_click=lambda x: self.close_dlg(reset=True)
-                    "Yes",
-                    on_click=self.new_exp_clicked,
-                ),
-                # ft.TextButton("Yes", on_click=self.close_dlg),
+                ft.TextButton("Yes", on_click=self.new_exp_clicked),
                 ft.TextButton("No", on_click=self.close_newexp_dlg),
             ],
         )
@@ -485,6 +549,13 @@ class OdorDeliveryApp(UserControl):
         self.page.update()
 
     def close_newexp_dlg(self, e):
+        """Closes dialog informing user that experiment has finished.
+
+        Args:
+            e (event): on_result event from clicking "No" on the prompt asking
+            user to reset settings for new experiment.
+        """
+
         self.exp_fin_dlg.open = False
         self.reset_settings_btn.disabled = False
         self.start_button.disabled = False
@@ -492,9 +563,12 @@ class OdorDeliveryApp(UserControl):
         self.page.update()
 
     def abort_clicked(self, e):
+        """Shows dialog prompting user to confirm stopping the experiment.
+
+        Args:
+            e (event): on_result event from clicking Abort Experiment button.
         """
-        Shows dialog informing user that experiment has finished.
-        """
+
         self.abort_exp_dlg = ft.AlertDialog(
             modal=False,
             title=Text("Please confirm"),
@@ -512,12 +586,21 @@ class OdorDeliveryApp(UserControl):
         self.page.update()
 
     def close_abort_dlg(self, e):
+        """Closes the confirm stopping experiment dialog.
+
+        Args:
+            e (event): on_result event from clicking No on the dialog
+            confirming stopping the experiment.
+        """
+
         self.abort_exp_dlg.open = False
         self.reset_settings_btn.disabled = False
         self.update()
         self.page.update()
 
     def save_solenoid_info(self):
+        """Saves the solenoid order to a .csv file."""
+
         csv_name = (
             f"{self.date}_{self.animal_id}_{self.roi}_solenoid_order_"
             f"{self.csv_time}.csv"
@@ -541,6 +624,8 @@ class OdorDeliveryApp(UserControl):
         self.page.update()
 
     def create_buttons(self):
+        """Creates the buttons used for Settings fields."""
+
         self.pick_directory_btn = ElevatedButton(
             "Open directory",
             icon=icons.FOLDER_OPEN,
@@ -573,6 +658,10 @@ class OdorDeliveryApp(UserControl):
         )
 
     def make_rand_start_buttons(self):
+        """Creates the Start Experiment, Randomize Again, and Abort Experiment
+        buttons.
+        """
+
         self.start_button = ElevatedButton(
             "Start Experiment",
             on_click=self.start_clicked,
@@ -592,12 +681,19 @@ class OdorDeliveryApp(UserControl):
             bgcolor=ft.colors.TERTIARY_CONTAINER,
             color=ft.colors.TERTIARY,
             on_click=self.abort_clicked,
-            # on_click=self.abort,
             col={"sm": 4},
             disabled=False,
         )
 
     def abort(self, e):
+        """Aborts the experiment by stopping the arduino session and disabling
+        relevant buttons in the UI.
+
+        Args:
+            e (event): on_result event from from clicking Yes on the dialog
+            confirming stopping the experiment.
+        """
+
         self.abort_exp_dlg.open = False
         self.page.update()
         self.arduino_session.stop_threads.set()
