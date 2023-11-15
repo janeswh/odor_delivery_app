@@ -1,3 +1,6 @@
+"""Contains the SettingsFields and SettingsLayout classes to create the
+Settings section of the app layout."""
+
 import flet as ft
 from flet import (
     UserControl,
@@ -6,20 +9,30 @@ from flet import (
     Page,
 )
 
+import pdb
+
 
 class SettingsFields(UserControl):
+    """Creates settings field for each specific input with default values.
+
+    Attributes:
+        label: Label next to the text field.
+        on_change (function): Callback function to run when field is changed.
+        textfield_dict (dict): Contains labels with default values.
+        text_field (ft.TextField): The actual text field object.
+    """
+
     def __init__(
         self,
-        # ref: Ref = None,
         label: str = "",
         on_change=None,
     ):
+        """Initializes an instance of the SettingsField class."""
+
         super().__init__()
         self.label = label
 
         self.textfield_dict = {
-            # "Animal ID": {"value": ""},
-            # "ROI": {"value": ""},
             "Odor panel type": {
                 "value": "",
             },
@@ -42,23 +55,47 @@ class SettingsFields(UserControl):
             self.text_field.hint_text = "e.g. 123456-1-2"
 
     def reset(self):
+        """Resets the text field to default value."""
         self.text_field.value = self.textfield_dict[self.label]["value"]
-        self.update()
+        # self.update()
 
     def build(self):
         return self.text_field
 
 
 class SettingsLayout(UserControl):
+    """Creates settings layout to be added to the main app.
+
+    Attributes:
+        page (ft.Page): The page that OdorDeliveryApp will be added to.
+        directory_path (ft.Text): Flet Textt object containing location of the
+                experimental folder.
+        settings_dict (dict): Dict containing all the settings from the
+            settings fields.
+    """
+
     def __init__(
-        self, page: Page, directory_path, check_complete, update_parent
+        self, page: Page, directory_path: ft.Text, check_complete, update_parent
     ):
+        """Initializes an instance of SettingsLayout to be added to the main
+        page of the app.
+
+        Args:
+            page: The page that OdorDeliveryApp will be added to.
+            directory_path: Flet Textt object containing location of the
+                experimental folder.
+            check_complete: Callback function to run that checks whether all
+                fields have been completed.
+            update_parent: Callback function to clear residual settings from
+                previous trial type selection.
+        """
+
         super().__init__()
 
         self.page = page
         self.directory_path = directory_path
         self.settings_dict = None
-        self.saved_click = False
+        # self.saved_click = False
 
         self.create_settings_fields(check_complete, update_parent)
         self.arrange_settings_fields()
@@ -173,6 +210,7 @@ class SettingsLayout(UserControl):
             self.trial_type.value = "Multiple"
             self.panel_type.value = ""
         self.num_odors.value = ""
+        # pdb.set_trace()
         self.num_trials.reset()
         self.odor_duration.reset()
         self.time_btw_odors.reset()
