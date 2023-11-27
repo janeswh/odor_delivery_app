@@ -1,3 +1,5 @@
+"""Contains utility functions for running the app."""
+
 import sys, os
 
 

@@ -30,22 +30,6 @@ class OdorDeliveryApp(UserControl):
 
     The structure is populated with other UserControl classes for experiment
     settings fields, trial order display, and experiment progress.
-
-    Attributes:
-        csv_time (str): Timestamp for saving the csv file.
-        page (ft.Page): The page that OdorDeliveryApp will be added to.
-        directory_path (ft.Text): Flet Textt object containing location of the
-            experimental folder.
-        get_directory_dialog (ft.FilePicker): A control that prompts user to
-            select directory location.
-        settings_fields (ft.UserControl): A UserControl class that contains the
-            settings field for experimental settings.
-        trial_table (ft.UserControl): A UserControl class that contains the
-            odor/trial order displayed in a table.
-        divider1 (ft.Divider): A horizontal divider for layout purposes.
-        divider2 (ft.Divider): A horizontal divider for layout purposes.
-        arduino_session (ft.UserControl): A UserControl class containing the
-            signals sent to the arduino and all relevant experiment displays.
     """
 
     def __init__(self, page: Page):
@@ -58,9 +42,13 @@ class OdorDeliveryApp(UserControl):
 
         super().__init__()
         # self.port = None
+
+        #: str: Timestamp for saving the csv file
         self.csv_time = None
+
+        #: ft.Page: The page that OdorDeliveryApp will be added to
         self.page = page
-        # self.upload_arduino()
+
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text("Snack bar init"), bgcolor=ft.colors.SECONDARY
         )
@@ -83,8 +71,12 @@ class OdorDeliveryApp(UserControl):
             force_actions_below=True,
         )
 
+        #: ft.Text: Flet Text object containing location of the
+        # experimental folder
         self.directory_path = Text(col={"sm": 8})
 
+        #: ft.FilePicker: A control that prompts user to select directory
+        # location
         self.get_directory_dialog = FilePicker(
             on_result=self.get_directory_result,
         )
@@ -93,6 +85,9 @@ class OdorDeliveryApp(UserControl):
 
         # Passes self.check_settings_complete() so that the child control
         # text fields can turn off the Save button
+
+        #: ft.UserControl): A UserControl class that contains the settings
+        # field for experimental settings
         self.settings_fields = SettingsLayout(
             self.page,
             self.directory_path,
@@ -100,12 +95,21 @@ class OdorDeliveryApp(UserControl):
             update_parent=self.update_trial_type_settings,
         )
 
+        #: ft.UserControl: A UserControl class that contains the odor/trial
+        # order displayed in a table
         self.trial_table = None
-        self.divider1 = ft.Divider()
-        self.divider2 = ft.Divider()
-        self.arduino_session = None
-        self.make_app_layout()
 
+        #: ft.Divider: A horizontal divider for layout purposes
+        self.divider1 = ft.Divider()
+
+        #: ft.Divider: A horizontal divider for layout purposes
+        self.divider2 = ft.Divider()
+
+        #: ft.UserControl: Layout containing the signals sent to the arduino
+        # and all relevant experiment displays
+        self.arduino_session = None
+
+        self.make_app_layout()
         self.page.update()
 
     def upload_arduino(self):
@@ -146,16 +150,20 @@ class OdorDeliveryApp(UserControl):
     def make_app_layout(self):
         """Sets up the initial layout of the odor delivery app."""
 
+        #: ft.Text: Header for the Settings layout
         self.settings_title = Text(
             "Experiment Settings", style=ft.TextThemeStyle.HEADLINE_LARGE
         )
 
+        #: ft.Text: Header for the Trial Order layout
         self.trials_title = Text("Trial Order", style=ft.TextThemeStyle.HEADLINE_LARGE)
 
+        #: ft.Text: Header for the Progress layout
         self.progress_title = Text(
             "Experiment Progress", style=ft.TextThemeStyle.HEADLINE_LARGE
         )
 
+        #: ft.Column: Layout containing prompts to pick directory
         self.directory_prompt = Column(
             controls=[
                 Text("Select experiment folder to save solenoid info"),
@@ -167,6 +175,8 @@ class OdorDeliveryApp(UserControl):
         self.page.window_width = 600
         self.page.window_height = 900
         self.page.window_resizable = False
+
+        #:  ft.ResponsiveRow: Layout containing directory picker UI elements
         self.pick_directory_layout = ft.ResponsiveRow(
             [
                 self.pick_directory_btn,
@@ -174,6 +184,7 @@ class OdorDeliveryApp(UserControl):
             ]
         )
 
+        #: ft.ResponsiveRow: Layout containing buttons
         self.save_reset_buttons = ft.ResponsiveRow(
             [
                 self.randomize_option,
@@ -182,8 +193,10 @@ class OdorDeliveryApp(UserControl):
             ]
         )
 
+        #: ft.Row: Layout containing buttons
         self.randomize_start_buttons = ft.Row()
 
+        #: ft.Column: Layout for the whole app
         self.app_layout = Column(
             width=600,
             controls=[
@@ -239,21 +252,38 @@ class OdorDeliveryApp(UserControl):
         """Parses the directory folder for experiment session info."""
 
         folder = os.path.basename(self.directory_path.value)
+
+        #: str: Date of the experiment
         self.date = folder.split("--")[0]
+
+        #: str: Animal ID of the experiment
         self.animal_id = folder.split("--")[1].split("_")[0]
+
+        #: str: ROI of the experiment
         self.roi = folder.split("_")[1]
 
     def save_settings(self):
         """Saves the user-input experiment settings to a dict."""
 
+        #: str: Whether odor panel is 1% or 10%
         self.panel_type = self.settings_fields.panel_type.value
+
+        #: str: Multiple or Single trials
         self.trial_type = self.settings_fields.trial_type.value
+
+        #: int: Duration of odor in s
         self.odor_duration = int(self.settings_fields.odor_duration.text_field.value)
 
-        # Initialize variables
+        #: int: Number of odors to deliver
         self.num_odors = None
+
+        #: int: Number of trials to run per odor
         self.num_trials = None
+
+        #: int: Time in s between odors
         self.time_btw_odors = None
+
+        # int: Odor number to delivery for single trial experiments
         self.single_odor = None
 
         if self.trial_type == "Multiple":
@@ -266,6 +296,7 @@ class OdorDeliveryApp(UserControl):
             self.single_odor = int(self.settings_fields.single_odor.value)
             self.time_btw_odors = 10  # TODO: double-check this
 
+        #: dict: All experiment settings entered from settings fields
         self.settings_dict = {
             "dir_path": self.directory_path.value,
             "mouse": self.animal_id,
@@ -295,7 +326,6 @@ class OdorDeliveryApp(UserControl):
         self.randomize_option.disabled = True
         self.settings_fields.disable_settings_fields(disable=True)
 
-        # Adds trial order table
         self.trial_table = TrialOrderTable(
             self.page,
             self.trial_type,
@@ -303,7 +333,7 @@ class OdorDeliveryApp(UserControl):
             self.randomize_option.value,
             self.num_trials,
             self.num_odors,
-            reset=False,
+            # reset=False,
         )
 
         self.make_rand_start_buttons()
@@ -480,7 +510,7 @@ class OdorDeliveryApp(UserControl):
         self.arduino_session.arduino_layout.content.controls[2].controls.append(
             self.abort_btn
         )
-        # self.update() # Don't need this I think
+        # self.update()  # Don't need this I think
 
         self.start_arduino_session()
 
@@ -535,6 +565,7 @@ class OdorDeliveryApp(UserControl):
     def prompt_new_exp(self):
         """Shows dialog informing user that experiment has finished."""
 
+        #: ft.AlertDialog: Alert dialog upon experiment completion
         self.exp_fin_dlg = ft.AlertDialog(
             modal=True,
             title=Text("Odor delivery completed."),
@@ -569,6 +600,7 @@ class OdorDeliveryApp(UserControl):
             e (event): on_result event from clicking Abort Experiment button.
         """
 
+        #: ft.AlertDialog: Alert dialog upon stopping experiment
         self.abort_exp_dlg = ft.AlertDialog(
             modal=False,
             title=Text("Please confirm"),
@@ -626,6 +658,7 @@ class OdorDeliveryApp(UserControl):
     def create_buttons(self):
         """Creates the buttons used for Settings fields."""
 
+        #: ft.ElevatedButton: Button to click to select directory
         self.pick_directory_btn = ElevatedButton(
             "Open directory",
             icon=icons.FOLDER_OPEN,
@@ -637,10 +670,12 @@ class OdorDeliveryApp(UserControl):
             disabled=self.page.web,
         )
 
+        #: ft.ElevatedButton: Randomize selector option
         self.randomize_option = ft.Switch(
             label="Shuffle trials", value=True, col={"sm": 4}
         )
 
+        #: ft.ElevatedButton: Save Settings button
         self.save_settings_btn = ElevatedButton(
             "Save Settings",
             icon=icons.SAVE_ALT_ROUNDED,
@@ -649,6 +684,7 @@ class OdorDeliveryApp(UserControl):
             disabled=True,
         )
 
+        #: ft.ElevatedButton: Reset Settings button
         self.reset_settings_btn = ElevatedButton(
             "Reset Settings",
             icon=icons.REFRESH_ROUNDED,
@@ -662,6 +698,7 @@ class OdorDeliveryApp(UserControl):
         buttons.
         """
 
+        #: ft.ElevatedButton: Start Experiment button
         self.start_button = ElevatedButton(
             "Start Experiment",
             on_click=self.start_clicked,
@@ -669,13 +706,15 @@ class OdorDeliveryApp(UserControl):
         )
 
         if self.randomize_option.value is True:
+            #: ft.ElevatedButton: Randomize Again button
             self.randomize_button = ElevatedButton(
                 "Randomize Again",
                 icon=ft.icons.SHUFFLE_ROUNDED,
                 on_click=self.randomize_trials_again,
             )
 
-        self.abort_btn = ft.ElevatedButton(
+        #: ft.ElevatedButton: Abort Experiment button
+        self.abort_btn = ElevatedButton(
             "Abort Experiment",
             icon=ft.icons.STOP_ROUNDED,
             bgcolor=ft.colors.TERTIARY_CONTAINER,

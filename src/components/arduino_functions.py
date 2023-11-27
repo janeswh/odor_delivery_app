@@ -1,3 +1,6 @@
+"""Contains the ArduinoSession class to communicate with the Arduino board
+and display experiment progress."""
+
 import flet as ft
 from flet import UserControl, Column, Container, Text, TextField, Row
 
@@ -12,27 +15,67 @@ from threading import Thread, Event
 
 
 class ArduinoSession(UserControl):
-    def __init__(self, panel_type, csv_time, page, settings, odor_sequence):
+    """Controls communication with the Arduino board and contains layout
+    displaying experimental progress."""
+
+    def __init__(
+        self,
+        panel_type: str,
+        csv_time: str,
+        page: ft.Page,
+        settings: dict,
+        odor_sequence: list,
+    ):
+        """Initializes an instance for holding signals sent to the arduino per
+        session.
+
+        Args:
+            panel_type: Whether odor panel is 1% or 10%.
+            csv_time: Timestamp for saving the csv file.
+            page: The page that OdorDeliveryApp will be added to.
+            settings: All experiment settings entered from settings fields.
+            odor_sequence: The order of odor delivery, by odor number.
         """
-        Defines the class for holding signals sent to the arduino per session
-        """
+
         super().__init__()
+
+        #: str: Whether odor panel is 1% or 10%
         self.panel_type = panel_type
+
+        #: str: Timestamp for saving the csv file
         self.csv_time = csv_time
+
+        #: ft.Page: The page that OdorDeliveryApp will be added to
         self.page = page
+
+        #: dict: All experiment settings entered from settings fields
         self.acq_params = settings
+
+        #: list: The order of odor delivery, by odor (solenoid) number
         self.solenoid_order = odor_sequence
 
+        #: str: The date of the experiment
         self.date = settings["date"]
+
+        #: str: The animal ID of the experiment
         self.animal_id = settings["mouse"]
+
+        #: roi: The ROI of the experiment
         self.roi = settings["roi"]
+
+        #: str: The directory for saving solenoid info and timing files
         self.directory_path = settings["dir_path"]
 
-        # Progress bar
+        #: ft.ProgressBar: Progress bar for experiment progress
         self.progress_bar = ft.ProgressBar(width=600)
-        # Progress bar text
+
+        #: ft.Text: Text for the progress bar that gets updated
         self.progress_bar_text = Text()
+
+        #: ft.Column: Layout to hold progress bar elements
         self.pb_column = Column([self.progress_bar_text, self.progress_bar])
+
+        #: ft.TextField: Dynamic log showing experiment progress text outputs
         self.output_log = TextField(
             # label="Script output log",
             multiline=True,
@@ -45,47 +88,59 @@ class ArduinoSession(UserControl):
             bgcolor=ft.colors.SECONDARY_CONTAINER,
         )
 
+        #: ft.Switch: Toggle to enable or disable showing logs
         self.log_toggle = ft.Switch(
             label="Show output log",
             on_change=self.show_output_log,
             value=False,
         )
 
+        #: Event: Event to control arduino threaded process
         self.stop_threads = Event()
 
-        # Plateholder container for arduino progress msgs
-        # self.arduino_step_text = Text("Initial arduino step progress")
+        #: ft.Text: Placeholder container for arduino progress msgs
         self.arduino_step_text = Text()
 
+        #: bool: Whether the Arduino port has been opened
         self.port_opened = False
-        self.trig_signal = False  # Whether Arduino has triggered microscope
-        self.sequence_complete = (
-            False  # Whether odor delivery sequence has finished
-        )
+
+        #: bool: Whether Arduino has triggered microscope
+        self.trig_signal = False
+
+        #: bool: Whether odor delivery sequence has finished
+        self.sequence_complete = False
 
         # Keep track of when the solenoids were activated
-        self.time_solenoid_on = (
-            []
-        )  # Contains times that solenoids were activated
-        self.time_solenoid_off = (
-            []
-        )  # Contains times that solenoids were closed
 
-        # if sent = 1, then that means a string has been sent to the arduino
+        #: list: Contains times that solenoids were activated
+        self.time_solenoid_on = []
+
+        #: list: Contains times that solenoids were closed
+        self.time_solenoid_off = []
+
+        #: int: Whether a string has been sent to the arduino
+        # If sent = 1, then that means a string has been sent to the arduino
         # and we need to wait for it to be done
         self.sent = 0
 
+        #: list: List of times when microscope has been triggered via TTL
         self.time_scope_TTL = []
         self.open_port()
         self.update()
 
     def open_port(self):
+        """Opens arduino port.
+
+        As of Nov 16, 2023, the Arduino board controlling 1% odor valves is
+        connected via COM8, and the board controlling 10% odor valves is
+        connected via COM7.
         """
-        Opens arduino port
-        """
+
+        #: serial.Serial: The Serial instance used in this session
         self.arduino = serial.Serial()
 
         if self.panel_type == "1%":
+            #: str: The port to activate, depending on which panel to deliver.
             self.port = "COM8"
         elif self.panel_type == "10%":
             self.port = "COM7"
@@ -101,16 +156,14 @@ class ArduinoSession(UserControl):
         self.progress_bar_text.value = f"Arduino port {self.port} opened."
 
     def close_port(self):
-        """
-        Closes arduino port
-        """
+        """Closes arduino port."""
+
         self.arduino.close()
         self.port_opened = False
 
     def get_arduino_msg(self):
-        """
-        Gets message back from arduino after sending it str
-        """
+        """Gets message back from arduino after sending it a string."""
+
         if self.arduino.isOpen():
             sent_info = self.arduino.readline().strip()
             arduino_msg = sent_info.decode("utf-8")
@@ -119,11 +172,17 @@ class ArduinoSession(UserControl):
 
         return arduino_msg
 
-    def parse_arduino_msg(self, trial, solenoid):
+    def parse_arduino_msg(self, trial: int, solenoid: int):
+        """Translates the message sent back from arduino into informative
+        timestamps.
+
+        Prints the info into an output log on the main app.
+
+        Args:
+            trial: The trial currently being sent to the Arduino board.
+            solenoid: The solenoid to activate for the current trial.
         """
-        Translates the message sent back from arduino into informative
-        timestamps. Prints the info into placeholder textbox
-        """
+
         arduino_msg = self.get_arduino_msg()
         print(arduino_msg)
 
@@ -209,7 +268,16 @@ class ArduinoSession(UserControl):
 
         self.update()
 
-    def update_log(self, trial, odor, step, isotime):
+    def update_log(self, trial: int, odor: int, step: str, isotime: str):
+        """Updates the app's output log with Arduino's experiment progress.
+
+        Args:
+            trial: The trial currently being sent to the Arduino board.
+            odor: The odor being delivered in the current trial.
+            step: Integer representing the current step of the delivery process
+            isotime: The time of the current step
+        """
+
         if step != "3":
             time_obj = datetime.datetime.fromisoformat(isotime)
             time = time_obj.strftime("%H:%M:%S")
@@ -231,8 +299,8 @@ class ArduinoSession(UserControl):
         self.update
 
     def generate_arduino_str(self):
-        """
-        Generates arduino execution strs in format "x, y, z" where
+        """Generates arduino execution strings in format "x, y, z".
+
         x = solenoid number
         y = odor duration (s)
         z = time between odors (s)
@@ -243,9 +311,7 @@ class ArduinoSession(UserControl):
                 f"Press Start/Run on Thor Images to start odor delivery"
             )
             for trial in range(len(self.solenoid_order)):
-                self.progress_bar.value = trial * (
-                    1 / len(self.solenoid_order)
-                )
+                self.progress_bar.value = trial * (1 / len(self.solenoid_order))
                 self.update()
                 print(f"doing trial {trial+1}")
 
@@ -257,7 +323,6 @@ class ArduinoSession(UserControl):
                 self.sent = 1
 
                 # Send the information to arduino and wait for something to come back
-
                 self.arduino.write(to_be_sent.encode())
                 print(f"to be sent is {to_be_sent}")
 
@@ -287,9 +352,7 @@ class ArduinoSession(UserControl):
                     1 / len(self.solenoid_order)
                 )
 
-                self.progress_bar_text.value = (
-                    "Odor delivery sequence complete."
-                )
+                self.progress_bar_text.value = "Odor delivery sequence complete."
 
             self.close_port()
             self.update()
@@ -309,10 +372,15 @@ class ArduinoSession(UserControl):
             self.page.snack_bar.open = True
             self.page.update()
 
-    def save_solenoid_timings(self, trial):
-        """
-        Saves the timestamps for when each solenoid was triggered, opened,
+    def save_solenoid_timings(self, trial: int):
+        """Saves the timestamps for when each solenoid was triggered, opened,
         and closed to a .csv file.
+
+        Entries for each trials are added to the csv after each trial has
+        been completed, so the file is updated in real-time.
+
+        Args:
+            trial: The current trial of the timings being written to the file.
         """
         csv_name = (
             f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
@@ -329,9 +397,7 @@ class ArduinoSession(UserControl):
             timings_df = pd.DataFrame(
                 {
                     "Trial": trial_labels,
-                    f"Odor {self.panel_type}": self.solenoid_order[
-                        : trial + 1
-                    ],
+                    f"Odor {self.panel_type}": self.solenoid_order[: trial + 1],
                     "Microscope Triggered": self.time_scope_TTL,
                     "Solenoid opened": self.time_solenoid_on,
                     "Solenoid closed": self.time_solenoid_off,
@@ -342,13 +408,13 @@ class ArduinoSession(UserControl):
 
         timings_df.to_csv(path, index=False)
 
-        timings_name = (
-            f"{self.date}_{self.animal_id}_{self.roi}_solenoid_timings_"
-            f"{self.csv_time}.csv"
-        )
-
     def show_output_log(self, e):
-        """"""
+        """Enable or disable display of experiment output log.
+
+        Args:
+            e (event): on_change event from toggling output log switch.
+        """
+
         if self.output_log in self.arduino_layout.content.controls:
             self.arduino_layout.content.controls.remove(self.output_log)
         else:
@@ -357,12 +423,13 @@ class ArduinoSession(UserControl):
         self.update()
 
     def build(self):
+        #: ft.Container: Layout containing all the UI elements for Arduino
+        # experiment progress.
         self.arduino_layout = Container(
             Column(
                 controls=[
                     self.pb_column,
                     self.arduino_step_text,
-                    # self.log_toggle
                     Row(controls=[self.log_toggle]),
                 ]
             )
