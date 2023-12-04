@@ -12,6 +12,7 @@ from flet import (
 from simpledt import DataFrame
 import pandas as pd
 import random
+import pdb
 
 
 class TrialOrderTable(UserControl):
@@ -26,6 +27,7 @@ class TrialOrderTable(UserControl):
         randomize: bool,
         num_trials: int,
         num_odors: int,
+        specf_odors: str
         # reset: bool,
     ):
         """Initializes an instance of the TrialOrderTable class.
@@ -37,6 +39,7 @@ class TrialOrderTable(UserControl):
             randomize: Whether to shuffle trials.
             num_trials: Number of trials to run per odor.
             num_odors: Number of odors to deliver.
+            specf_odors: Numbers of specific odors to deliver.
             reset:
         """
 
@@ -57,21 +60,36 @@ class TrialOrderTable(UserControl):
         #: ft.Container: Layout for displaying all trial order UI elements
         self.exp_display_content = Container()
 
-        # if reset is False:
-
         #: int: Number of trials to run per odor
         self.num_trials = num_trials
 
         #: int:Number of odors to deliver
         self.num_odors = num_odors
 
-        if self.num_trials != "" and self.num_odors != "":
-            if self.randomize is True:
-                self.randomize_trials(repeat=False)
-            else:
-                self.make_nonrandom_trials()
-            self.make_trials_df()
-            self.display_trial_order()
+        # if specf_odors is not None:
+        #         self.specf_odors = [int(odor) for odor in specf_odors.split(",")]
+
+        #: list: Numbers of specific odors to deliver, int in a list
+        self.specf_odors = specf_odors
+
+        # if self.num_trials != "" and self.num_odors != "":
+        self.make_nonrandom_trials()
+
+        if self.trial_type != "Single":
+            if self.num_trials is not None:
+                if self.trial_type == "Multiple" and self.num_odors is not None:
+                    if self.randomize is True:
+                        self.randomize_trials(repeat=False)
+
+                if (
+                    self.trial_type == "Limited Multiple"
+                    and self.specf_odors is not None
+                ):
+                    if self.randomize is True:
+                        self.randomize_trials(repeat=False)
+
+        self.make_trials_df()
+        self.display_trial_order()
 
     def make_nonrandom_trials(self):
         """Generates trial odor order for non-shuffled experiments."""
@@ -79,10 +97,11 @@ class TrialOrderTable(UserControl):
         if self.trial_type == "Single":
             #: list: The entire sequence of odors for every trial.
             self.trials = [self.single_odor]
-        else:
-            self.trials = self.trials = (
-                list(range(1, self.num_odors + 1)) * self.num_trials
-            )
+        elif self.trial_type == "Multiple":
+            self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
+        elif self.trial_type == "Limited Multiple":
+            self.trials = self.specf_odors * self.num_trials
+
         self.update()
 
     def randomize_trials(self, repeat: bool, e=None):
@@ -93,14 +112,13 @@ class TrialOrderTable(UserControl):
             e (event): on_click event from pressing Randomize Again.
         """
 
-        if repeat is False:
-            self.trials = list(range(1, self.num_odors + 1)) * self.num_trials
         random.shuffle(self.trials)
 
         if repeat is True:
             self.make_trials_df()
             self.display_trial_order()
             print("randomize_trials repeat called")
+
         self.update()
 
     def make_trials_df(self):

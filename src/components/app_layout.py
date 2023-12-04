@@ -23,6 +23,7 @@ from components.utils import resolve_path
 
 import pyduinocli
 from threading import Thread
+import re
 
 
 class OdorDeliveryApp(UserControl):
@@ -277,7 +278,10 @@ class OdorDeliveryApp(UserControl):
         #: int: Number of odors to deliver
         self.num_odors = None
 
-        #: int: Number of trials to run per odor
+        #: list: Specific odors to deliver
+        self.specf_odors = None
+
+        #: str: Number of trials to run per odor
         self.num_trials = None
 
         #: int: Time in s between odors
@@ -286,15 +290,25 @@ class OdorDeliveryApp(UserControl):
         # int: Odor number to delivery for single trial experiments
         self.single_odor = None
 
-        if self.trial_type == "Multiple":
-            self.num_odors = int(self.settings_fields.num_odors.value)
+        if self.trial_type == "Single":
+            self.single_odor = int(self.settings_fields.single_odor.value)
+            self.time_btw_odors = 10  # TODO: double-check this
+
+        elif self.trial_type == "Multiple" or self.trial_type == "Limited Multiple":
             self.num_trials = int(self.settings_fields.num_trials.text_field.value)
             self.time_btw_odors = int(
                 self.settings_fields.time_btw_odors.text_field.value
             )
-        elif self.trial_type == "Single":
-            self.single_odor = int(self.settings_fields.single_odor.value)
-            self.time_btw_odors = 10  # TODO: double-check this
+
+            if self.trial_type == "Multiple":
+                self.num_odors = int(self.settings_fields.num_odors.value)
+            elif self.trial_type == "Limited Multiple":
+                self.specf_odors = [
+                    int(odor)
+                    for odor in self.settings_fields.specf_odors.text_field.value.split(
+                        ","
+                    )
+                ]
 
         #: dict: All experiment settings entered from settings fields
         self.settings_dict = {
@@ -305,11 +319,37 @@ class OdorDeliveryApp(UserControl):
             "panel_type": self.panel_type,
             "single_odor": self.single_odor,
             "num_odors": self.num_odors,
+            "specific_odors": self.specf_odors,
             "num_trials": self.num_trials,
             "odor_duration": self.odor_duration,
             "time_btw_odors": self.time_btw_odors,
             "randomize_trials": self.randomize_option.value,
         }
+
+    def check_specf_odors_format(self):
+        """Checks whether the odors entered for Limited Multiple trial are
+        entered in the correct format.
+
+        Returns:
+            Bool of whether odors are formatted correctly
+
+        """
+        correct_format = None
+
+        if self.settings_fields.specf_odors.text_field.value:
+            pattern = re.compile("^[1-8](,[1-8])*$")
+            if pattern.match(self.settings_fields.specf_odors.text_field.value) is None:
+                self.settings_fields.specf_odors.text_field.error_text = (
+                    "Check odor input"
+                )
+                correct_format = False
+            else:
+                self.settings_fields.specf_odors.text_field.error_text = ""
+                correct_format = True
+
+            self.settings_fields.specf_odors.text_field.update()
+
+        return correct_format
 
     def save_clicked(self, e):
         """Saves settings and populates app layout after clicking Save button.
@@ -318,44 +358,52 @@ class OdorDeliveryApp(UserControl):
             e (event): on_result event from clicking Save Settings button.
         """
 
-        self.get_session_info()
-        self.save_settings()
+        if self.settings_fields.trial_type.value == "Limited Multiple":
+            specf_format = self.check_specf_odors_format()
 
-        self.save_settings_btn.disabled = True
-        self.pick_directory_btn.disabled = True
-        self.randomize_option.disabled = True
-        self.settings_fields.disable_settings_fields(disable=True)
+        if self.settings_fields.trial_type.value != "Limited Multiple" or (
+            self.settings_fields.trial_type.value == "Limited Multiple"
+            and specf_format is True
+        ):
+            self.get_session_info()
+            self.save_settings()
 
-        self.trial_table = TrialOrderTable(
-            self.page,
-            self.trial_type,
-            self.single_odor,
-            self.randomize_option.value,
-            self.num_trials,
-            self.num_odors,
-            # reset=False,
-        )
+            self.save_settings_btn.disabled = True
+            self.pick_directory_btn.disabled = True
+            self.randomize_option.disabled = True
+            self.settings_fields.disable_settings_fields(disable=True)
 
-        self.make_rand_start_buttons()
+            self.trial_table = TrialOrderTable(
+                self.page,
+                self.trial_type,
+                self.single_odor,
+                self.randomize_option.value,
+                self.num_trials,
+                self.num_odors,
+                self.specf_odors
+                # reset=False,
+            )
 
-        if self.randomize_option.value is True:
-            self.randomize_start_buttons.controls = [
-                self.randomize_button,
-                self.start_button,
-            ]
-        else:
-            self.randomize_start_buttons.controls = [
-                self.start_button,
-            ]
+            self.make_rand_start_buttons()
 
-        self.app_layout.controls.extend(
-            [
-                self.divider1,
-                self.trials_title,
-                self.trial_table,
-                self.randomize_start_buttons,
-            ]
-        )
+            if self.randomize_option.value is True:
+                self.randomize_start_buttons.controls = [
+                    self.randomize_button,
+                    self.start_button,
+                ]
+            else:
+                self.randomize_start_buttons.controls = [
+                    self.start_button,
+                ]
+
+            self.app_layout.controls.extend(
+                [
+                    self.divider1,
+                    self.trials_title,
+                    self.trial_table,
+                    self.randomize_start_buttons,
+                ]
+            )
 
         self.update()
 
@@ -422,6 +470,7 @@ class OdorDeliveryApp(UserControl):
         Args:
             e (event): on_result event from clicking Reset Settings button.
         """
+
         if (
             ""
             in [
@@ -436,20 +485,31 @@ class OdorDeliveryApp(UserControl):
 
         elif (
             ""
-            in [
-                self.settings_fields.num_odors.value,
-                self.settings_fields.num_trials.text_field.value,
+            not in [
+                # self.settings_fields.num_trials.text_field.value,
+                self.settings_fields.odor_duration.text_field.value,
                 self.settings_fields.time_btw_odors.text_field.value,
             ]
-            or self.settings_fields.num_odors.value is None
+            # or self.settings_fields.num_odors.value is None
         ):
-            if self.settings_fields.trial_type.value == "Multiple":
-                self.save_settings_btn.disabled = True
-            else:
+            if self.settings_fields.trial_type.value == "Single":
                 self.save_settings_btn.disabled = False
+            elif self.settings_fields.num_trials.text_field.value != "":
+                if (
+                    self.settings_fields.trial_type.value == "Multiple"
+                    and self.settings_fields.num_odors.value != ""
+                ):
+                    self.save_settings_btn.disabled = False
+                elif (
+                    self.settings_fields.trial_type.value == "Limited Multiple"
+                    and self.settings_fields.specf_odors.text_field.value != ""
+                ):
+                    self.save_settings_btn.disabled = False
+            else:
+                self.save_settings_btn.disabled = True
 
         else:
-            self.save_settings_btn.disabled = False
+            self.save_settings_btn.disabled = True
 
         self.update()
 

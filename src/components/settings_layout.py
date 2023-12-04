@@ -9,6 +9,8 @@ from flet import (
     Page,
 )
 
+import pdb
+
 
 class SettingsFields(UserControl):
     """Creates settings field for each specific input with default values."""
@@ -38,6 +40,7 @@ class SettingsFields(UserControl):
             "# Trials/odor": {"value": ""},
             "Odor duration (s)": {"value": "1"},
             "Time between odors (s)": {"value": "10"},
+            "Specific odors": {"value": ""},
         }
 
         #: ft.TextField: The actual field UI element
@@ -51,8 +54,18 @@ class SettingsFields(UserControl):
             focused_border_width=2,
         )
 
-        if self.label == "Animal ID":
-            self.text_field.hint_text = "e.g. 123456-1-2"
+        # Use regex to filter everything except comma and digits,
+        # https://stackoverflow.com/questions/16620980/comma-separated-numbers-regex
+
+        if self.label == "Specific odors":
+            self.text_field.input_filter = ft.InputFilter(
+                allow=True,
+                regex_string=r"[1-8,]",
+                replacement_string="",
+            )
+
+        if self.label == "Specific odors":
+            self.text_field.hint_text = "e.g. 1,2,7"
 
     def reset(self):
         """Resets the text field to default value."""
@@ -127,6 +140,7 @@ class SettingsLayout(UserControl):
             options=[
                 ft.dropdown.Option("Single"),
                 ft.dropdown.Option("Multiple"),
+                ft.dropdown.Option("Limited Multiple"),
             ],
             # alignment=ft.alignment.center,
             col={"sm": 4},
@@ -165,6 +179,11 @@ class SettingsLayout(UserControl):
             border_width=1,
             focused_border_color=ft.colors.SURFACE_TINT,
             focused_border_width=2,
+        )
+
+        #: SettingsFields: Manual entry of specific odors to deliver
+        self.specf_odors = SettingsFields(
+            label="Specific odors", on_change=check_complete
         )
 
         #: SettingsFields: Number of trials per odor
@@ -220,6 +239,23 @@ class SettingsLayout(UserControl):
                 ]
             )
 
+        if self.trial_type.value == "Limited Multiple":
+            self.row1 = ft.ResponsiveRow(
+                [
+                    Column(col={"sm": 3}, controls=[self.panel_type]),
+                    Column(col={"sm": 3}, controls=[self.trial_type]),
+                    Column(col={"sm": 3}, controls=[self.specf_odors]),
+                ]
+            )
+
+            self.row2 = ft.ResponsiveRow(
+                [
+                    Column(col={"sm": 3}, controls=[self.num_trials]),
+                    Column(col={"sm": 3}, controls=[self.odor_duration]),
+                    Column(col={"sm": 3}, controls=[self.time_btw_odors]),
+                ]
+            )
+
     def trial_type_changed(self, e, update_parent, check_complete):
         """Updates settings fields when trial type dropdown is changed.
 
@@ -256,6 +292,7 @@ class SettingsLayout(UserControl):
         self.num_trials.reset()
         self.odor_duration.reset()
         self.time_btw_odors.reset()
+        self.specf_odors.reset()
 
         self.arrange_settings_fields(e)
         self.disable_settings_fields(disable=False)
@@ -274,6 +311,7 @@ class SettingsLayout(UserControl):
         self.trial_type.disabled = disable
         self.single_odor.disabled = disable
         self.num_odors.disabled = disable
+        self.specf_odors.disabled = disable
         self.num_trials.disabled = disable
         self.odor_duration.disabled = disable
         self.time_btw_odors.disabled = disable
